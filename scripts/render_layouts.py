@@ -16,6 +16,7 @@ import colorsys
 import json
 import re
 from pathlib import Path
+from xml.sax.saxutils import escape as xml_escape
 
 REPO_DIR = Path(__file__).resolve().parent.parent
 QMK_FIRMWARE = Path.home() / "qmk_firmware"
@@ -231,7 +232,7 @@ def main():
                 opacity = ' fill-opacity="0.45" font-style="italic"' if inherited else ""
                 svg.append(
                     f'<text x="{px + KEY_SIZE/2}" y="{py + KEY_SIZE/2 + 4}" '
-                    f'text-anchor="middle" font-size="{fs}" fill="{text_color}"{opacity}>{label}</text>'
+                    f'text-anchor="middle" font-size="{fs}" fill="{text_color}"{opacity}>{xml_escape(label)}</text>'
                 )
         svg.append("</svg>")
         out_path = LAYOUT_DIR / f"layer{layer_idx}.svg"
