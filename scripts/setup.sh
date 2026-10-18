@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 # idempotent environment setup: clones ZSA's qmk_firmware fork if missing,
 # makes sure it's on the firmware25 branch, applies the python3.14 compat
-# patch it needs, and symlinks this repo's keymap/ into it. safe to re-run.
+# patch it needs, and symlinks this repo's keymap/ (and keymap-moonlander/,
+# if present) into it. safe to re-run.
+#
+# usage: scripts/setup.sh [voyager|moonlander]  (default: both)
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 QMK_FIRMWARE="$HOME/qmk_firmware"
-KEYMAP_DEST="$QMK_FIRMWARE/keyboards/zsa/voyager/keymaps/yayaya-alttab"
+BOARD="${1:-all}"
 
 if [ ! -d "$QMK_FIRMWARE" ]; then
   echo "cloning zsa/qmk_firmware..."
@@ -36,10 +39,21 @@ if grep -q "ast\.Num" "$MATH_PY"; then
     "$MATH_PY"
 fi
 
-if [ ! -L "$KEYMAP_DEST" ]; then
-  echo "linking keymap into qmk_firmware..."
-  rm -rf "$KEYMAP_DEST"
-  ln -s "$REPO_DIR/keymap" "$KEYMAP_DEST"
+link_keymap() {
+  local repo_subdir="$1" qmk_keyboard="$2" qmk_keymap_name="$3"
+  local dest="$QMK_FIRMWARE/keyboards/$qmk_keyboard/keymaps/$qmk_keymap_name"
+  if [ ! -L "$dest" ]; then
+    echo "linking $repo_subdir into qmk_firmware ($qmk_keyboard)..."
+    rm -rf "$dest"
+    ln -s "$REPO_DIR/$repo_subdir" "$dest"
+  fi
+}
+
+if [ "$BOARD" = "voyager" ] || [ "$BOARD" = "all" ]; then
+  link_keymap keymap zsa/voyager yayaya-alttab
+fi
+if [ "$BOARD" = "moonlander" ] || [ "$BOARD" = "all" ]; then
+  link_keymap keymap-moonlander zsa/moonlander yayaya-alttab
 fi
 
-echo "setup complete. run scripts/build.sh to compile."
+echo "setup complete. run scripts/build.sh [voyager|moonlander] to compile."

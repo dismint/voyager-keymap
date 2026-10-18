@@ -1,9 +1,19 @@
 # Instructions for Claude Code working in this repo
 
-This is Justin's personal QMK keymap for his ZSA Voyager. Development now
-happens entirely in this repo, directly in `keymap/keymap.c` — there is no
-more Oryx export/re-import cycle. If a conversation ever mentions an Oryx
-`_source.zip`, that workflow is retired; just edit the files here.
+This is Justin's personal QMK keymap, primarily for his ZSA Voyager.
+Development happens entirely in this repo — there is no more Oryx
+export/re-import cycle. If a conversation ever mentions an Oryx
+`_source.zip`, treat it as a one-off reference import (e.g. for porting to
+a new physical board), not something to build against directly.
+
+The same logical keymap is also ported to a ZSA Moonlander in
+`keymap-moonlander/`. **The Voyager (`keymap/`) is the source of truth.**
+When changing shared logic (combos, Alt-Tab/gaming mechanics, lighting
+philosophy, layer semantics), make the change in `keymap/keymap.c` first,
+then re-apply it to `keymap-moonlander/keymap.c` by hand — the two files
+are independent C sources, not generated from each other, so nothing
+re-syncs them automatically. See "Porting to a new board" below for how
+the Voyager's 52 keys map onto the Moonlander's 72.
 
 ## Build environment
 
@@ -11,8 +21,14 @@ more Oryx export/re-import cycle. If a conversation ever mentions an Oryx
   (not `firmware24` — that branch is missing `modules/zsa/oryx`, the
   community module Oryx's own cloud builder links in, and firmware built
   without it behaves differently, especially around RGB/live-control).
-- `~/qmk_firmware/keyboards/zsa/voyager/keymaps/yayaya-alttab` is a **symlink**
-  to this repo's `keymap/` directory. Edit files here, not there.
+- `~/qmk_firmware/keyboards/zsa/voyager/keymaps/yayaya-alttab` and
+  `~/qmk_firmware/keyboards/zsa/moonlander/keymaps/yayaya-alttab` are
+  **symlinks** to this repo's `keymap/` and `keymap-moonlander/`
+  directories respectively. Edit files here, not there.
+- The Moonlander only compiles against a specific revision folder:
+  `-kb zsa/moonlander/reva` (there's no default revision at the top-level
+  `zsa/moonlander`, so the bare path errors out). `scripts/build.sh
+  moonlander` already knows this.
 - The nixpkgs `qmk` package is missing the `appdirs` python dependency.
   `scripts/build.sh` and `scripts/setup.sh` work around this by resolving
   it separately via `nix build nixpkgs#python3Packages.appdirs` and passing
@@ -28,16 +44,21 @@ more Oryx export/re-import cycle. If a conversation ever mentions an Oryx
 
 ## Workflow for making changes
 
-1. Edit `keymap/keymap.c` (or the other three files) directly.
-2. Run `./scripts/build.sh` from the repo root.
+1. Edit `keymap/keymap.c` (or the other three files) directly. If the
+   change is to shared logic (not a Voyager-only physical-layout tweak),
+   also apply it to `keymap-moonlander/keymap.c` — see the note at the top
+   of this file.
+2. Run `./scripts/build.sh` (Voyager) and/or `./scripts/build.sh
+   moonlander` from the repo root, for whichever board(s) changed.
 3. The `.bin` lands in `build/` and gets copied to Windows Downloads
    automatically. Tell the user to flash it with **Keymapp** (not Wally —
    deprecated) and briefly summarize what changed.
-4. Run `./scripts/render_layouts.py` whenever `keymap.c` changed — it
-   regenerates `layout/*.svg` from the current keymap and splices fresh
-   image embeds into README.md between the `LAYOUT:START`/`LAYOUT:END`
-   markers. Keep the `LAYER_NAMES` dict at the top of that script in sync
-   if a layer's purpose changes or a layer is added/removed.
+4. Run `./scripts/render_layouts.py` (and/or `./scripts/render_layouts.py
+   moonlander`) whenever a keymap.c changed — it regenerates that board's
+   `layout*/*.svg` from the current keymap and splices fresh image embeds
+   into README.md between that board's `START`/`END` markers. Keep the
+   `LAYER_NAMES` dict at the top of that script in sync if a layer's
+   purpose changes or a layer is added/removed — it's shared across boards.
 5. Commit when the user asks you to (same rule as everywhere else — don't
    commit unprompted).
 
@@ -208,3 +229,56 @@ value is actually different from layer 0** (whether via real transparency
 or an explicit-but-identical redeclaration, like Gaming's Backspace). If
 it's the same as the base layer, leave it dark — that sameness is the
 whole signal "nothing changed here."
+
+## Porting to a new board (the Voyager → Moonlander mapping)
+
+The Moonlander's `LAYOUT_moonlander`/`LAYOUT` macro (in
+`keyboards/zsa/moonlander/reva/keyboard.json`) has 72 argument positions
+vs. the Voyager's 52: each half gets an extra pinky column, an extra
+bottom row, and a 4-key thumb cluster (vs. 2). Justin's request when
+porting was "exact same layout" with the extra keys left idle, specifically:
+
+- the 3-key inner-edge column per half (the column nearest the thumb
+  cluster/center gap, rows 0-2 — matrix col 6 on the left half, col 0 on
+  the right)
+- the entire bottom main row per half (including the big wide key under
+  the pinky column)
+- the outermost of each half's 3 regular thumb-cluster keys (the 2
+  innermost are the real thumb keys)
+
+This gives a clean, total 1:1 mapping (52 used + 20 unused = 72) with zero
+ambiguity — every real Voyager key has exactly one Moonlander home, and
+every leftover Moonlander key is unused. The mapping (Moonlander argument
+position → Voyager argument position, both 0-indexed, left-to-right
+top-to-bottom thumbs-last within each board's own `LAYOUT_xxx(...)` order):
+
+| Moonlander row | Moonlander positions | Voyager positions | Notes |
+|---|---|---|---|
+| row 0 | 0-5 | 0-5 | Esc,1,2,3,4,5 |
+| row 0 | 6,7 | — | unused (inner-edge pair) |
+| row 0 | 8-13 | 6-11 | 6,7,8,9,0,Bksp |
+| row 1 | 14-19 | 12-17 | Tab,Q,W,E,R,T |
+| row 1 | 20,21 | — | unused |
+| row 1 | 22-27 | 18-23 | Y,U,I,O,P,\\ |
+| row 2 | 28-33 | 24-29 | Meta,A,S,D,F,G |
+| row 2 | 34,35 | — | unused |
+| row 2 | 36-41 | 30-35 | H,J,K,L,;,' |
+| row 3 | 42-47 | 36-41 | Shift,Z,X,C,V,B (no edge keys on this row) |
+| row 3 | 48-53 | 42-47 | N,M,,,.,/,Shift |
+| row 4 | 54-65 | — | unused (whole bottom row, both halves + big wide keys) |
+| thumb | 66 | — | unused (left outer thumb key) |
+| thumb | 67,68 | 48,49 | Ctrl, `LR 1` (left inner two) |
+| thumb | 69,70 | 50,51 | Enter, Space (right inner two) |
+| thumb | 71 | — | unused (right outer thumb key) |
+
+Everything that isn't the two `keymaps[]`/`ledmap[]` arrays — the custom
+keycode enum, combo definitions, `process_combo_event`, Alt-Tab/
+`GAME_CTL`/`GAME_TAB` logic, `set_layer_color`/`rgb_matrix_indicators_user`
+— is copied verbatim between the two keymap.c files; none of it is
+keyboard-specific. Combos in particular transfer with zero changes, since
+QMK combos trigger on keycodes, not physical position.
+
+If the physical choice of *which* thumb key is idle (or anything else
+above) turns out to be uncomfortable in practice, it's a one-line swap in
+`keymap-moonlander/keymap.c`'s `keymaps[]`/`ledmap[]` arrays at the
+relevant argument position — no need to regenerate anything from scratch.

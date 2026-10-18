@@ -1,13 +1,22 @@
 #!/usr/bin/env bash
-# compiles the voyager keymap and drops a flashable .bin into build/ here
-# and into Windows Downloads, ready to flash with Keymapp.
+# compiles the voyager (default) or moonlander keymap and drops a flashable
+# .bin into build/ here and into Windows Downloads, ready to flash with
+# Keymapp.
+#
+# usage: scripts/build.sh [voyager|moonlander]
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 QMK_FIRMWARE="$HOME/qmk_firmware"
-KEYBOARD="zsa/voyager"
+BOARD="${1:-voyager}"
 KEYMAP="yayaya-alttab"
 DOWNLOADS_DIR="/mnt/c/Users/justi/Downloads"
+
+case "$BOARD" in
+  voyager)    KEYBOARD="zsa/voyager" ;;
+  moonlander) KEYBOARD="zsa/moonlander/reva" ;;
+  *) echo "unknown board: $BOARD (expected voyager or moonlander)" >&2; exit 1 ;;
+esac
 
 # nixpkgs' qmk package is missing the "appdirs" python dependency; resolve it
 # separately and hand it to that interpreter via PYTHONPATH.
@@ -22,8 +31,9 @@ mkdir -p "$REPO_DIR/build"
 cp "$QMK_FIRMWARE/$bin_name" "$REPO_DIR/build/$bin_name"
 
 if [ -d "$DOWNLOADS_DIR" ]; then
-  cp "$QMK_FIRMWARE/$bin_name" "$DOWNLOADS_DIR/zsa_voyager_${KEYMAP}.bin"
-  echo "ready to flash: $DOWNLOADS_DIR/zsa_voyager_${KEYMAP}.bin (open Keymapp and flash this file)"
+  downloads_name="zsa_${BOARD}_${KEYMAP}.bin"
+  cp "$QMK_FIRMWARE/$bin_name" "$DOWNLOADS_DIR/$downloads_name"
+  echo "ready to flash: $DOWNLOADS_DIR/$downloads_name (open Keymapp and flash this file)"
 fi
 
 echo "built: $REPO_DIR/build/$bin_name"

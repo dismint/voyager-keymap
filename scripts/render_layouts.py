@@ -1,29 +1,52 @@
 #!/usr/bin/env python3
 """
-Render SVG diagrams of every layer in keymap/keymap.c, matching the Voyager's
-physical key layout and the actual configured RGB colors, then splice them
-into README.md between the LAYOUT:START/LAYOUT:END markers.
+Render SVG diagrams of every layer in a keymap.c, matching the physical key
+layout and the actual configured RGB colors, then splice them into
+README.md between that board's LAYOUT markers.
 
 This reads keymap.c directly (not a hand-maintained description of it), so
 it can't drift from what's actually flashed. Run it after any keymap change:
 
-    ./scripts/render_layouts.py
+    ./scripts/render_layouts.py             # voyager (default)
+    ./scripts/render_layouts.py moonlander
 
 Only the layer name map below (LAYER_NAMES) and the keycode label map
 (LABELS) need manual upkeep — everything else is derived from the source.
+These are shared across boards since they're keyed by keycode/layer index,
+not by physical position.
 """
 import colorsys
 import json
 import re
+import sys
 from pathlib import Path
 from xml.sax.saxutils import escape as xml_escape
 
 REPO_DIR = Path(__file__).resolve().parent.parent
 QMK_FIRMWARE = Path.home() / "qmk_firmware"
-KEYMAP_C = REPO_DIR / "keymap" / "keymap.c"
+
+# per-board paths and the LAYOUT_xxx macro name used in that board's
+# keymap.c -- add an entry here when porting to a new physical keyboard.
+BOARDS = {
+    "voyager": {
+        "keymap_c": REPO_DIR / "keymap" / "keymap.c",
+        "keyboard_json": QMK_FIRMWARE / "keyboards/zsa/voyager/keyboard.json",
+        "layout_dir": REPO_DIR / "layout",
+        "layout_macro": "LAYOUT_voyager",
+        "key_count": 52,
+        "readme_marker": "LAYOUT",
+    },
+    "moonlander": {
+        "keymap_c": REPO_DIR / "keymap-moonlander" / "keymap.c",
+        "keyboard_json": QMK_FIRMWARE / "keyboards/zsa/moonlander/reva/keyboard.json",
+        "layout_dir": REPO_DIR / "layout-moonlander",
+        "layout_macro": "LAYOUT_moonlander",
+        "key_count": 72,
+        "readme_marker": "LAYOUT_MOONLANDER",
+    },
+}
+
 README = REPO_DIR / "README.md"
-LAYOUT_DIR = REPO_DIR / "layout"
-KEYBOARD_JSON = QMK_FIRMWARE / "keyboards/zsa/voyager/keyboard.json"
 
 # update this if layers are added, removed, or repurposed. these are the
 # canonical layer names used everywhere (README, images, CLAUDE.md prose).
@@ -165,25 +188,26 @@ def extract_balanced(s, start, open_ch="(", close_ch=")"):
     raise ValueError("unbalanced delimiters")
 
 
-def parse_layers(text, array_name):
-    """returns {layer_index: [52 raw tokens]}, scanning only within this
-    array's own declaration so it can't bleed into a different array below it"""
+def parse_layers(text, array_name, layout_macro, key_count):
+    """returns {layer_index: [key_count raw tokens]}, scanning only within
+    this array's own declaration so it can't bleed into a different array
+    below it"""
     name_pos = text.index(f"{array_name}[]")
     eq_pos = text.index("=", name_pos)
     open_brace = text.index("{", eq_pos)
     body = extract_balanced(text, open_brace, "{", "}")
 
     layers = {}
-    for m in re.finditer(r"\[(\d+)\]\s*=\s*(LAYOUT_voyager|\{)", body):
+    for m in re.finditer(r"\[(\d+)\]\s*=\s*(" + re.escape(layout_macro) + r"|\{)", body):
         idx = int(m.group(1))
         abs_pos = m.end() - 1
-        if m.group(2) == "LAYOUT_voyager":
+        if m.group(2) == layout_macro:
             open_paren = body.index("(", abs_pos)
             content = extract_balanced(body, open_paren, "(", ")")
         else:
             content = extract_balanced(body, abs_pos, "{", "}")
         tokens = split_top_level(content)
-        if len(tokens) == 52:
+        if len(tokens) == key_count:
             layers[idx] = tokens
     return layers
 
@@ -249,7 +273,14 @@ def luminance(hexcolor):
 
 
 def main():
-    with open(KEYBOARD_JSON) as f:
+    board_name = sys.argv[1] if len(sys.argv) > 1 else "voyager"
+    board = BOARDS[board_name]
+    KEYMAP_C = board["keymap_c"]
+    LAYOUT_DIR = board["layout_dir"]
+    layout_macro = board["layout_macro"]
+    key_count = board["key_count"]
+
+    with open(board["keyboard_json"]) as f:
         kb = json.load(f)
     arg_to_matrix = [tuple(e["matrix"]) for e in kb["layouts"]["LAYOUT"]["layout"]]
     coords = [(e["x"], e["y"]) for e in kb["layouts"]["LAYOUT"]["layout"]]
@@ -257,8 +288,8 @@ def main():
     arg_to_led = [matrix_to_led[m] for m in arg_to_matrix]
 
     text = KEYMAP_C.read_text()
-    keymap_layers = parse_layers(text, "keymaps")
-    led_layers = parse_layers(text, "ledmap")
+    keymap_layers = parse_layers(text, "keymaps", layout_macro, key_count)
+    led_layers = parse_layers(text, "ledmap", layout_macro, key_count)
     combos = parse_combos(text)
 
     LAYOUT_DIR.mkdir(exist_ok=True)
@@ -351,24 +382,27 @@ def main():
         out_path.write_text("\n".join(svg))
         print(f"wrote {out_path}")
 
-    # splice the image embeds into README.md between the markers
-    section_lines = ["<!-- LAYOUT:START (generated by scripts/render_layouts.py — do not hand-edit) -->", ""]
+    # splice the image embeds into README.md between this board's markers
+    marker = board["readme_marker"]
+    img_dir = LAYOUT_DIR.name
+    section_lines = [f"<!-- {marker}:START (generated by scripts/render_layouts.py — do not hand-edit) -->", ""]
     for layer_idx in sorted(keymap_layers):
         name = LAYER_NAMES.get(layer_idx, f"Layer {layer_idx}")
         section_lines.append(f"### Layer {layer_idx} — {name}")
         section_lines.append("")
-        section_lines.append(f"![Layer {layer_idx}](layout/layer{layer_idx}.svg)")
+        section_lines.append(f"![Layer {layer_idx}]({img_dir}/layer{layer_idx}.svg)")
         section_lines.append("")
 
-    section_lines.append("<!-- LAYOUT:END -->")
+    section_lines.append(f"<!-- {marker}:END -->")
     new_section = "\n".join(section_lines)
 
     readme = README.read_text()
-    pattern = re.compile(r"<!-- LAYOUT:START.*?<!-- LAYOUT:END -->", re.DOTALL)
+    pattern = re.compile(rf"<!-- {marker}:START.*?<!-- {marker}:END -->", re.DOTALL)
     if pattern.search(readme):
         readme = pattern.sub(new_section, readme)
     else:
-        readme = readme.rstrip() + "\n\n## Layout\n\n" + new_section + "\n"
+        heading = f"## {board_name.capitalize()} layout"
+        readme = readme.rstrip() + f"\n\n{heading}\n\n" + new_section + "\n"
     README.write_text(readme)
     print(f"updated {README}")
 
