@@ -228,7 +228,6 @@ def main():
     keymap_layers = parse_layers(text, "keymaps")
     led_layers = parse_layers(text, "ledmap")
     combos = parse_combos(text)
-    combo_keycodes = {kc for keys, _ in combos for kc in keys}
 
     LAYOUT_DIR.mkdir(exist_ok=True)
     max_x = max(x for x, y in coords) + 1
@@ -237,6 +236,23 @@ def main():
     height = max_y * UNIT + CANVAS_PAD * 2
 
     base_tokens = keymap_layers.get(0)
+
+    # a combo's trigger keycodes only still produce themselves on a layer if
+    # nothing on that layer remaps the physical keys involved (checking only
+    # a one-level fallback to layer 0, same simplification used for
+    # "inherited" key labels below -- doesn't model multi-layer nesting chains)
+    combo_positions = [[base_tokens.index(k) for k in keys] for keys, _ in combos]
+    active_positions_by_layer = {}
+    valid_layers_by_combo = [[] for _ in combos]
+    for layer_idx, layer_tokens in keymap_layers.items():
+        active = set()
+        for ci, (positions, (keys, action)) in enumerate(zip(combo_positions, combos)):
+            effective = [layer_tokens[p] if layer_tokens[p] != "KC_TRANSPARENT" else base_tokens[p]
+                         for p in positions]
+            if effective == keys:
+                active.update(positions)
+                valid_layers_by_combo[ci].append(layer_idx)
+        active_positions_by_layer[layer_idx] = active
 
     for layer_idx in sorted(keymap_layers):
         tokens = keymap_layers[layer_idx]
@@ -273,7 +289,7 @@ def main():
                     f'<text x="{px + KEY_SIZE/2}" y="{py + KEY_SIZE/2 + 4}" '
                     f'text-anchor="middle" font-size="{fs}" fill="{text_color}"{opacity}>{xml_escape(label)}</text>'
                 )
-            if layer_idx == 0 and token in combo_keycodes:
+            if argpos in active_positions_by_layer[layer_idx]:
                 svg.append(
                     f'<circle cx="{px + KEY_SIZE - 7}" cy="{py + 7}" r="4" '
                     f'fill="{COMBO_MARKER_COLOR}" stroke="#0d0d0d" stroke-width="1"/>'
@@ -294,14 +310,16 @@ def main():
 
     if combos:
         section_lines.append(
-            f'### Combos (marked <span style="color:{COMBO_MARKER_COLOR}">●</span> on Layer 0 above)'
+            f'### Combos (marked <span style="color:{COMBO_MARKER_COLOR}">●</span> above, '
+            f"only on layers where the trigger keys aren't remapped to something else)"
         )
         section_lines.append("")
-        section_lines.append("| Keys | Action |")
-        section_lines.append("|---|---|")
-        for keys, action in combos:
+        section_lines.append("| Keys | Action | Works on |")
+        section_lines.append("|---|---|---|")
+        for (keys, action), valid_layers in zip(combos, valid_layers_by_combo):
             key_labels = " + ".join(label_for(k) for k in keys)
-            section_lines.append(f"| {key_labels} | {describe_action(action)} |")
+            layers_str = ", ".join(str(n) for n in sorted(valid_layers)) or "none"
+            section_lines.append(f"| {key_labels} | {describe_action(action)} | {layers_str} |")
         section_lines.append("")
 
     section_lines.append("<!-- LAYOUT:END -->")

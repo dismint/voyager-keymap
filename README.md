@@ -56,12 +56,12 @@ just falls through to the base layer's keycode shown.
 
 ![Layer 4](layout/layer4.svg)
 
-### Combos (marked <span style="color:#ff4fd8">●</span> on Layer 0 above)
+### Combos (marked <span style="color:#ff4fd8">●</span> above, only on layers where the trigger keys aren't remapped to something else)
 
-| Keys | Action |
-|---|---|
-| D + F | Caps Lock |
-| D + G | Toggle layer 3 (Gaming) |
+| Keys | Action | Works on |
+|---|---|---|
+| D + F | Caps Lock | 0, 3, 4 |
+| D + G | Toggle layer 3 (Gaming) | 0, 3, 4 |
 
 <!-- LAYOUT:END -->
 
