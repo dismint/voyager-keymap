@@ -25,13 +25,14 @@ README = REPO_DIR / "README.md"
 LAYOUT_DIR = REPO_DIR / "layout"
 KEYBOARD_JSON = QMK_FIRMWARE / "keyboards/zsa/voyager/keyboard.json"
 
-# update this if layers are added, removed, or repurposed
+# update this if layers are added, removed, or repurposed. these are the
+# canonical layer names used everywhere (README, images, CLAUDE.md prose).
 LAYER_NAMES = {
     0: "Base",
-    1: "Symbols",
-    2: "Nav / Function",
+    1: "Symlayer",
+    2: "ArrowFN",
     3: "Gaming",
-    4: "Numpad (nested)",
+    4: "Numpad",
 }
 
 # how to render each keycode token. unmapped tokens fall back to a stripped
@@ -91,7 +92,9 @@ LABELS = {
     "KC_CAPS": "Caps Lock",
 }
 
-COMBO_MARKER_COLOR = "#ff4fd8"
+# one marker color per combo, assigned by combo definition order. add more
+# if a 7th+ combo ever shows up.
+COMBO_COLORS = ["#ff4fd8", "#4fd8ff", "#ffd84f", "#9d4fff", "#4fff9d", "#ff8a4f"]
 
 # which layer's diagram shows each combo's dot marker, keyed by the combo's
 # variable name in keymap.c (e.g. "combo0"). combos not listed here default
@@ -103,6 +106,8 @@ DEFAULT_COMBO_DISPLAY_LAYER = 0
 CANVAS_PAD = 20
 UNIT = 58
 KEY_SIZE = 50
+LEGEND_LINE_HEIGHT = 20
+LEGEND_PAD = 16
 
 
 def label_for(token):
@@ -259,17 +264,24 @@ def main():
             if effective == keys:
                 valid_layers_by_combo[ci].append(layer_idx)
 
-    # one chosen layer per combo gets the dot marker, for a clean diagram
-    display_positions_by_layer = {idx: set() for idx in keymap_layers}
-    for positions, (name, keys, action) in zip(combo_positions, combos):
+    # one chosen layer per combo gets the dot marker(s), for a clean diagram.
+    # tracks WHICH combo indices land on each position (a key in N combos
+    # gets N dots), not just whether any combo touches it.
+    combo_indices_by_layer = {idx: {} for idx in keymap_layers}
+    combos_shown_by_layer = {idx: [] for idx in keymap_layers}
+    for ci, (positions, (name, keys, action)) in enumerate(zip(combo_positions, combos)):
         display_layer = COMBO_DISPLAY_LAYER.get(name, DEFAULT_COMBO_DISPLAY_LAYER)
-        display_positions_by_layer.setdefault(display_layer, set()).update(positions)
+        combos_shown_by_layer.setdefault(display_layer, []).append(ci)
+        for p in positions:
+            combo_indices_by_layer.setdefault(display_layer, {}).setdefault(p, []).append(ci)
 
     for layer_idx in sorted(keymap_layers):
         tokens = keymap_layers[layer_idx]
         colors = led_layers.get(layer_idx)
-        svg = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
-               f'viewBox="0 0 {width} {height}" font-family="monospace">']
+        legend_combos = combos_shown_by_layer.get(layer_idx, [])
+        layer_height = height + (LEGEND_PAD + len(legend_combos) * LEGEND_LINE_HEIGHT if legend_combos else 0)
+        svg = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{layer_height}" '
+               f'viewBox="0 0 {width} {layer_height}" font-family="monospace">']
         svg.append(f'<rect width="100%" height="100%" fill="#0d0d0d"/>')
         for argpos, token in enumerate(tokens):
             x, y = coords[argpos]
@@ -300,11 +312,27 @@ def main():
                     f'<text x="{px + KEY_SIZE/2}" y="{py + KEY_SIZE/2 + 4}" '
                     f'text-anchor="middle" font-size="{fs}" fill="{text_color}"{opacity}>{xml_escape(label)}</text>'
                 )
-            if argpos in display_positions_by_layer[layer_idx]:
+            for dot_i, ci in enumerate(combo_indices_by_layer.get(layer_idx, {}).get(argpos, [])):
+                dot_color = COMBO_COLORS[ci % len(COMBO_COLORS)]
                 svg.append(
-                    f'<circle cx="{px + KEY_SIZE - 7}" cy="{py + 7}" r="4" '
-                    f'fill="{COMBO_MARKER_COLOR}" stroke="#0d0d0d" stroke-width="1"/>'
+                    f'<circle cx="{px + KEY_SIZE - 7 - dot_i * 9}" cy="{py + 7}" r="4" '
+                    f'fill="{dot_color}" stroke="#0d0d0d" stroke-width="1"/>'
                 )
+
+        if legend_combos:
+            ly = height + LEGEND_PAD
+            for ci in legend_combos:
+                name, keys, action = combos[ci]
+                dot_color = COMBO_COLORS[ci % len(COMBO_COLORS)]
+                key_labels = " + ".join(label_for(k) for k in keys)
+                legend_text = f"{key_labels} → {describe_action(action)}"
+                svg.append(f'<circle cx="{CANVAS_PAD + 5}" cy="{ly - 4}" r="4" fill="{dot_color}"/>')
+                svg.append(
+                    f'<text x="{CANVAS_PAD + 16}" y="{ly}" font-size="12" fill="#e8e8e8">'
+                    f'{xml_escape(legend_text)}</text>'
+                )
+                ly += LEGEND_LINE_HEIGHT
+
         svg.append("</svg>")
         out_path = LAYOUT_DIR / f"layer{layer_idx}.svg"
         out_path.write_text("\n".join(svg))
@@ -321,18 +349,21 @@ def main():
 
     if combos:
         section_lines.append(
-            f'### Combos (marked <span style="color:{COMBO_MARKER_COLOR}">●</span> on its '
-            f'listed display layer above; "works on" shows every layer it actually still fires on)'
+            "### Combos (each combo's keys + action are also drawn directly on its "
+            'display layer above, next to a dot in its own color; "works on" below '
+            "shows every layer it actually still fires on, which can differ from "
+            "where it's drawn)"
         )
         section_lines.append("")
-        section_lines.append("| Keys | Action | Display layer | Works on |")
-        section_lines.append("|---|---|---|---|")
-        for (name, keys, action), valid_layers in zip(combos, valid_layers_by_combo):
+        section_lines.append("| | Keys | Action | Display layer | Works on |")
+        section_lines.append("|---|---|---|---|---|")
+        for ci, ((name, keys, action), valid_layers) in enumerate(zip(combos, valid_layers_by_combo)):
+            dot = f'<span style="color:{COMBO_COLORS[ci % len(COMBO_COLORS)]}">●</span>'
             key_labels = " + ".join(label_for(k) for k in keys)
             display_layer = COMBO_DISPLAY_LAYER.get(name, DEFAULT_COMBO_DISPLAY_LAYER)
             layers_str = ", ".join(str(n) for n in sorted(valid_layers)) or "none"
             section_lines.append(
-                f"| {key_labels} | {describe_action(action)} | {display_layer} | {layers_str} |"
+                f"| {dot} | {key_labels} | {describe_action(action)} | {display_layer} | {layers_str} |"
             )
         section_lines.append("")
 

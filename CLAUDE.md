@@ -73,24 +73,35 @@ this catches category mistakes that the index math alone can't.
 
 ## Lighting philosophy
 
-**As of the 4-color simplification, this is now a strict, closed palette —
-do not reintroduce per-layer unique colors or add a 5th category without
-being asked.** Only light keys that are genuinely remapped/active on that
-layer; anything transparent/inherited (unchanged from layer 0, e.g. WASD on
-the gaming layer) stays fully dark (`{0,0,0}`), even if it's functionally
-important on that layer — "changed" is what earns color, not "important."
+**This is a strict, closed palette — do not reintroduce per-layer unique
+colors or add a new category without being asked.** Only light keys that
+are genuinely remapped/active on that layer; anything transparent/inherited
+(unchanged from layer 0, e.g. WASD on the Gaming layer, or a key that's
+explicitly redeclared but with the exact same value layer 0 already has,
+e.g. Backspace on the Gaming layer) stays fully dark (`{0,0,0}`), even if
+it's functionally important on that layer — **"changed from layer 0" is
+what earns color, not "important."**
 
 | Color | HSV | Category | Used for |
 |---|---|---|---|
-| white (primary) | `0,0,255` | Primary | any plain functional key — letters, numbers, symbols, Enter/Backspace/Space. The default for "just a regular key." |
+| white (primary) | `0,0,255` | Primary | any plain functional key — letters, numbers, symbols, Enter/Backspace/Space, arrow keys. The default for "just a regular key." |
 | light green (layer) | `85,140,255` | Layer | any layer-switch key, `MO()` or `TG()` alike — color doesn't distinguish hold vs. toggle, the label text does (`LR n` vs `TO n`) |
 | light blue (modifier) | `150,170,255` | Modifier | Ctrl/Alt/Shift/Meta, held or one-shot (`OSM(...)`) alike — all 4 OSM variants share this one color now, not 4 distinct ones |
 | light orange (special) | `28,140,255` | Special | a unique, non-obvious mechanism that doesn't fit the other 3 — omnibar, the Windows+Shift+S screenshot shortcut, `ALT_TAB`, the gaming layer's `GAME_CTL`/`GAME_TAB` pair |
 
-One sanctioned exception: the base layer's `1`-`5` number row keeps 5
-distinct colors as a legend (each previewing layers 0-4's old identity hue:
-white/blue/orange/red/teal) — this is intentionally decorative, not part of
-the 4-category system, and shouldn't be extended elsewhere.
+Two sanctioned exceptions, both requested explicitly — don't extend this
+pattern elsewhere without being asked:
+- **Layer-identity strip**: the `1`-`5` number row is forced to one solid
+  color per layer (overriding whatever category its actual keycode would
+  otherwise earn), so you can tell which layer is active on the physical
+  keyboard at a glance. Base = plain white (`0,0,255`), Symlayer = blue
+  (`170,150,255`), ArrowFN = orange (`28,200,255`), Gaming = red
+  (`0,200,255`), Numpad = teal (`135,210,255`). This is a real firmware
+  lighting feature, not just a diagram artifact — it's set directly in
+  `ledmap[]` for every layer.
+- **ArrowFN's F-keys** are the same blue as the identity strip
+  (`170,150,255`), deliberately distinct from modifier-blue, to set them
+  apart from the white arrow keys on that layer.
 
 All saturations are deliberately kept in the ~140-210 range, not maxed at
 255 — the user explicitly prefers this softer look over harsh fully-
@@ -99,12 +110,12 @@ saturated colors (confirmed preference, not a default).
 When a new key needs a color, pick the category by what the key *is*, not
 by what layer it's on: a modifier is always modifier-blue regardless of
 layer, a layer-switch key is always layer-green, and only genuinely unique
-one-off mechanisms get special-orange. Don't invent a 5th color for "this
-layer's theme" — that's exactly what got simplified away.
+one-off mechanisms get special-orange. Don't invent a new color for "this
+layer's theme" outside the two sanctioned exceptions above.
 
 ## Alt-Tab mechanics (there are two independent implementations)
 
-**Layer 1 (symbols)**: the Tab key there is the custom keycode `ALT_TAB`.
+**Symlayer (layer 1)**: the Tab key there is the custom keycode `ALT_TAB`.
 Pressing it registers `KC_LALT` (if not already registered) and taps
 `KC_TAB`; the `case MO(1):` handler in `process_record_user` releases
 `KC_LALT` when the layer-hold thumb key is released. This is the "usual
@@ -112,7 +123,7 @@ motion" referenced elsewhere in this doc: hold the thumb, tap Tab, release
 to select — zero delay, because nothing is predicted in advance, only
 decided retroactively on release.
 
-**Layer 3 (gaming)**: a different mechanism, `GAME_CTL` (the left-thumb key)
+**Gaming (layer 3)**: a different mechanism, `GAME_CTL` (the left-thumb key)
 + `GAME_TAB` (that layer's Tab slot). `GAME_CTL` is real Ctrl for everything
 by default. The *first* time `GAME_TAB` is pressed while `GAME_CTL` is held,
 it swaps live — unregisters Ctrl, registers `KC_LALT` instead, sets
@@ -140,7 +151,7 @@ one briefly, since removed), watch for two generated-template bugs:
    }
    ```
    Prefer plain dedicated keys over tap-dance for anything performance-
-   sensitive, though — that's why layer 3 moved away from it.
+   sensitive, though — that's why the Gaming layer moved away from it.
 
 ## Gaming layer (3) constraints — read before changing anything on it
 
@@ -152,15 +163,18 @@ one briefly, since removed), watch for two generated-template bugs:
   sit) or the thumb cluster. Putting things on the top row above Q/W was
   tried and rejected — it requires lifting the whole hand off the WASD
   resting position, which defeats the point.
-- **Alt-Tab must use the thumb-hold + Tab-tap gesture**, matching layer 1's
-  muscle memory, not a finger-key hold. This is why Ctrl/Alt ended up on
-  `GAME_CTL`/`GAME_TAB` (thumb) rather than a home-row key.
+- **Alt-Tab must use the thumb-hold + Tab-tap gesture**, matching
+  Symlayer's muscle memory, not a finger-key hold. This is why Ctrl/Alt
+  ended up on `GAME_CTL`/`GAME_TAB` (thumb) rather than a home-row key.
 
-Current layout on layer 3: Space = left-inner thumb, `GAME_CTL` (Ctrl, or
-Alt-Tab when combined with Tab) = left-outer thumb, standalone Alt = home
-row below Tab, Escape = top-left (plain, inherited from layer 0 — there's
-no dedicated layer-shift key on this layer), Backspace = top-right corner
-(inherited from layer 0, see below).
+Current layout on the Gaming layer: Space = left-inner thumb, `GAME_CTL`
+(Ctrl, or Alt-Tab when combined with Tab) = left-outer thumb, standalone
+Alt = home row below Tab, Escape = top-left (plain, inherited from layer 0
+— there's no dedicated layer-shift key on this layer), Backspace = top-
+right corner (explicitly redeclared the same as layer 0 — functionally
+present, but **not lit**, since it's identical to the base layer rather
+than something this layer changed; see "flow-through" below for the
+general principle).
 
 ### Design history (don't silently re-litigate these)
 
@@ -180,10 +194,17 @@ Transparent (`KC_TRANSPARENT`) keys fall through to the next layer down,
 ultimately to layer 0. Setting something on layer 0 "flows down" for free
 to every layer that leaves that position transparent — this is how the
 top-right Backspace key works (set once on layer 0, inherited by layers
-1/2/4 automatically; layer 3 has it set explicitly since that corner is
-otherwise unused there too). When adding a new universally-useful key,
-prefer setting it on layer 0 and letting it flow down over repeating it on
-every layer — but remember the **lighting doesn't flow through automatically**
-the way keycodes do; `ledmap[]` is per-layer and independent, so light the
-same position on every layer that inherits the keycode if you want the
-lighting to reflect it.
+1/2/4 automatically; Gaming has it set explicitly instead since that corner
+position needs a non-transparent value there for unrelated reasons, but
+it's still functionally identical to layer 0's Backspace). When adding a
+new universally-useful key, prefer setting it on layer 0 and letting it
+flow down over repeating it on every layer.
+
+Lighting does NOT flow through automatically the way keycodes do —
+`ledmap[]` is per-layer and independent. But per the lighting philosophy
+above, don't just mechanically copy a key's base-layer color onto every
+layer that inherits it either: **only light it on a layer if that layer's
+value is actually different from layer 0** (whether via real transparency
+or an explicit-but-identical redeclaration, like Gaming's Backspace). If
+it's the same as the base layer, leave it dark — that sameness is the
+whole signal "nothing changed here."
