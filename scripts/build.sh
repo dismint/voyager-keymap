@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# compiles the voyager keymap and drops a flashable .bin into build/ here
+# and into Windows Downloads, ready to flash with Keymapp.
+set -euo pipefail
+
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+QMK_FIRMWARE="$HOME/qmk_firmware"
+KEYBOARD="zsa/voyager"
+KEYMAP="yayaya-alttab"
+DOWNLOADS_DIR="/mnt/c/Users/justi/Downloads"
+
+# nixpkgs' qmk package is missing the "appdirs" python dependency; resolve it
+# separately and hand it to that interpreter via PYTHONPATH.
+appdirs_out="$(nix build --no-link --print-out-paths nixpkgs#python3Packages.appdirs)"
+appdirs_site="$(find "$appdirs_out" -maxdepth 4 -type d -name site-packages | head -n1)"
+
+cd "$QMK_FIRMWARE"
+PYTHONPATH="$appdirs_site" nix shell nixpkgs#qmk -c qmk compile -kb "$KEYBOARD" -km "$KEYMAP"
+
+bin_name="${KEYBOARD//\//_}_${KEYMAP}.bin"
+mkdir -p "$REPO_DIR/build"
+cp "$QMK_FIRMWARE/$bin_name" "$REPO_DIR/build/$bin_name"
+
+if [ -d "$DOWNLOADS_DIR" ]; then
+  cp "$QMK_FIRMWARE/$bin_name" "$DOWNLOADS_DIR/zsa_voyager_${KEYMAP}.bin"
+  echo "ready to flash: $DOWNLOADS_DIR/zsa_voyager_${KEYMAP}.bin (open Keymapp and flash this file)"
+fi
+
+echo "built: $REPO_DIR/build/$bin_name"
