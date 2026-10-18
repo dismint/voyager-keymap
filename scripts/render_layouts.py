@@ -103,6 +103,14 @@ COMBO_COLORS = ["#ff4fd8", "#4fd8ff", "#ffd84f", "#9d4fff", "#4fff9d", "#ff8a4f"
 COMBO_DISPLAY_LAYER = {}
 DEFAULT_COMBO_DISPLAY_LAYER = 0
 
+# display text for COMBO_ACTION(...) combos, keyed by the combo's variable
+# name -- their real behavior lives in process_combo_event in keymap.c and
+# can't be read statically, so describe it here by hand.
+COMBO_ACTION_LABELS = {
+    "combo2": "Hold Alt",
+    "combo3": "Hold Alt",
+}
+
 CANVAS_PAD = 20
 UNIT = 58
 KEY_SIZE = 50
@@ -181,7 +189,11 @@ def parse_layers(text, array_name):
 
 
 def parse_combos(text):
-    """returns [(combo_name, [trigger keycode tokens], action token), ...]"""
+    """returns [(combo_name, [trigger keycode tokens], action token), ...].
+    handles both plain COMBO(keys, keycode) entries and COMBO_ACTION(keys)
+    entries (the latter have no static action -- their behavior lives in
+    process_combo_event -- so the action token is a synthetic "CUSTOM:name"
+    marker; see COMBO_ACTION_LABELS for how that's displayed)."""
     combo_defs = {}
     for m in re.finditer(r"const uint16_t PROGMEM (\w+)\[\] = \{([^}]*)\};", text):
         name = m.group(1)
@@ -193,9 +205,14 @@ def parse_combos(text):
     body = extract_balanced(text, open_brace, "{", "}")
 
     combos = []
-    for m in re.finditer(r"COMBO\(", body):
+    for m in re.finditer(r"COMBO(_ACTION)?\(", body):
+        is_action = m.group(1) is not None
         content = extract_balanced(body, m.end() - 1, "(", ")")
-        name, action = split_top_level(content)[:2]
+        parts = split_top_level(content)
+        if is_action:
+            name, action = parts[0], f"CUSTOM:{parts[0]}"
+        else:
+            name, action = parts[:2]
         if name in combo_defs:
             combos.append((name, combo_defs[name], action))
     return combos
@@ -203,6 +220,9 @@ def parse_combos(text):
 
 def describe_action(token):
     """friendlier prose form of an action keycode, for the combos list"""
+    if token.startswith("CUSTOM:"):
+        combo_name = token[len("CUSTOM:"):]
+        return COMBO_ACTION_LABELS.get(combo_name, "Custom (see process_combo_event)")
     m = re.match(r"^MO\((\d+)\)$", token)
     if m:
         n = int(m.group(1))

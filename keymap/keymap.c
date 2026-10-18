@@ -15,6 +15,16 @@ enum custom_keycodes {
 static bool is_alt_tab_active = false;
 static bool game_ctl_held = false;
 static bool game_alt_active = false;
+static bool left_alt_combo_held = false;
+static bool right_alt_combo_held = false;
+static bool combo_alt_registered = false;
+
+enum combo_events {
+  CAPS_COMBO = 0,
+  GAMING_COMBO,
+  ALT_COMBO_LEFT,
+  ALT_COMBO_RIGHT,
+};
 
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
@@ -58,11 +68,40 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 const uint16_t PROGMEM combo0[] = { KC_D, KC_F, COMBO_END};
 const uint16_t PROGMEM combo1[] = { KC_D, KC_G, COMBO_END};
+const uint16_t PROGMEM combo2[] = { KC_X, KC_C, COMBO_END};
+const uint16_t PROGMEM combo3[] = { KC_COMMA, KC_DOT, COMBO_END};
 
 combo_t key_combos[COMBO_COUNT] = {
-    COMBO(combo0, KC_CAPS),
-    COMBO(combo1, TG(3)),
+    [CAPS_COMBO] = COMBO(combo0, KC_CAPS),
+    [GAMING_COMBO] = COMBO(combo1, TG(3)),
+    [ALT_COMBO_LEFT] = COMBO_ACTION(combo2),
+    [ALT_COMBO_RIGHT] = COMBO_ACTION(combo3),
 };
+
+// X+C (left) and ,+. (right) both hold Alt for as long as EITHER combo is
+// still engaged -- releasing just one of the two chord keys doesn't let go,
+// only releasing both does (a combo is a single virtual key: held until
+// every one of its members is back up).
+void process_combo_event(uint16_t combo_index, bool pressed) {
+  switch (combo_index) {
+    case ALT_COMBO_LEFT:
+      left_alt_combo_held = pressed;
+      break;
+    case ALT_COMBO_RIGHT:
+      right_alt_combo_held = pressed;
+      break;
+    default:
+      return;
+  }
+  bool should_hold = left_alt_combo_held || right_alt_combo_held;
+  if (should_hold && !combo_alt_registered) {
+    combo_alt_registered = true;
+    register_code(KC_LALT);
+  } else if (!should_hold && combo_alt_registered) {
+    combo_alt_registered = false;
+    unregister_code(KC_LALT);
+  }
+}
 
 
 
