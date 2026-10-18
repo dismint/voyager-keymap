@@ -154,8 +154,9 @@ one briefly, since removed), watch for two generated-template bugs:
 
 Current layout on layer 3: Space = left-inner thumb, `GAME_CTL` (Ctrl, or
 Alt-Tab when combined with Tab) = left-outer thumb, standalone Alt = home
-row below Tab, layer-shift `MO(1)` = top row above Tab, Backspace = top-
-right corner (inherited from layer 0, see below).
+row below Tab, Escape = top-left (plain, inherited from layer 0 — there's
+no dedicated layer-shift key on this layer), Backspace = top-right corner
+(inherited from layer 0, see below).
 
 ### Design history (don't silently re-litigate these)
 
