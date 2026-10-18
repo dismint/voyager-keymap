@@ -56,6 +56,13 @@ just falls through to the base layer's keycode shown.
 
 ![Layer 4](layout/layer4.svg)
 
+### Combos (marked <span style="color:#ff4fd8">●</span> on Layer 0 above)
+
+| Keys | Action |
+|---|---|
+| D + F | Caps Lock |
+| D + G | Toggle layer 3 (Gaming) |
+
 <!-- LAYOUT:END -->
 
 ## Repo layout

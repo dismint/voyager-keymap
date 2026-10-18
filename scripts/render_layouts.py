@@ -88,7 +88,10 @@ LABELS = {
     "KC_RIGHT": "Right",
     "KC_UP": "Up",
     "KC_DOWN": "Down",
+    "KC_CAPS": "Caps Lock",
 }
+
+COMBO_MARKER_COLOR = "#ff4fd8"
 
 CANVAS_PAD = 20
 UNIT = 58
@@ -165,6 +168,40 @@ def parse_layers(text, array_name):
     return layers
 
 
+def parse_combos(text):
+    """returns [([trigger keycode tokens], action token), ...]"""
+    combo_defs = {}
+    for m in re.finditer(r"const uint16_t PROGMEM (\w+)\[\] = \{([^}]*)\};", text):
+        name = m.group(1)
+        toks = [t.strip() for t in m.group(2).split(",")]
+        combo_defs[name] = [t for t in toks if t and t != "COMBO_END"]
+
+    kc_pos = text.index("key_combos[")
+    open_brace = text.index("{", kc_pos)
+    body = extract_balanced(text, open_brace, "{", "}")
+
+    combos = []
+    for m in re.finditer(r"COMBO\(", body):
+        content = extract_balanced(body, m.end() - 1, "(", ")")
+        name, action = split_top_level(content)[:2]
+        if name in combo_defs:
+            combos.append((combo_defs[name], action))
+    return combos
+
+
+def describe_action(token):
+    """friendlier prose form of an action keycode, for the combos list"""
+    m = re.match(r"^MO\((\d+)\)$", token)
+    if m:
+        n = int(m.group(1))
+        return f"Hold layer {n} ({LAYER_NAMES.get(n, n)})"
+    m = re.match(r"^TG\((\d+)\)$", token)
+    if m:
+        n = int(m.group(1))
+        return f"Toggle layer {n} ({LAYER_NAMES.get(n, n)})"
+    return label_for(token)
+
+
 def hsv_to_hex(h, s, v):
     if h == 0 and s == 0 and v == 0:
         return "#1a1a1a"  # unlit key, rendered as dark-but-visible, not pure black
@@ -190,6 +227,8 @@ def main():
     text = KEYMAP_C.read_text()
     keymap_layers = parse_layers(text, "keymaps")
     led_layers = parse_layers(text, "ledmap")
+    combos = parse_combos(text)
+    combo_keycodes = {kc for keys, _ in combos for kc in keys}
 
     LAYOUT_DIR.mkdir(exist_ok=True)
     max_x = max(x for x, y in coords) + 1
@@ -234,6 +273,11 @@ def main():
                     f'<text x="{px + KEY_SIZE/2}" y="{py + KEY_SIZE/2 + 4}" '
                     f'text-anchor="middle" font-size="{fs}" fill="{text_color}"{opacity}>{xml_escape(label)}</text>'
                 )
+            if layer_idx == 0 and token in combo_keycodes:
+                svg.append(
+                    f'<circle cx="{px + KEY_SIZE - 7}" cy="{py + 7}" r="4" '
+                    f'fill="{COMBO_MARKER_COLOR}" stroke="#0d0d0d" stroke-width="1"/>'
+                )
         svg.append("</svg>")
         out_path = LAYOUT_DIR / f"layer{layer_idx}.svg"
         out_path.write_text("\n".join(svg))
@@ -247,6 +291,19 @@ def main():
         section_lines.append("")
         section_lines.append(f"![Layer {layer_idx}](layout/layer{layer_idx}.svg)")
         section_lines.append("")
+
+    if combos:
+        section_lines.append(
+            f'### Combos (marked <span style="color:{COMBO_MARKER_COLOR}">●</span> on Layer 0 above)'
+        )
+        section_lines.append("")
+        section_lines.append("| Keys | Action |")
+        section_lines.append("|---|---|")
+        for keys, action in combos:
+            key_labels = " + ".join(label_for(k) for k in keys)
+            section_lines.append(f"| {key_labels} | {describe_action(action)} |")
+        section_lines.append("")
+
     section_lines.append("<!-- LAYOUT:END -->")
     new_section = "\n".join(section_lines)
 
