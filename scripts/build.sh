@@ -18,6 +18,12 @@ case "$BOARD" in
   *) echo "unknown board: $BOARD (expected voyager or moonlander)" >&2; exit 1 ;;
 esac
 
+# keymap/keymap.c (voyager) is the single source of truth; the moonlander
+# keymap.c is always regenerated from it before building, so it can't drift.
+if [ "$BOARD" = "moonlander" ]; then
+  "$REPO_DIR/scripts/generate_moonlander.py"
+fi
+
 # nixpkgs' qmk package is missing the "appdirs" python dependency; resolve it
 # separately and hand it to that interpreter via PYTHONPATH.
 appdirs_out="$(nix build --no-link --print-out-paths nixpkgs#python3Packages.appdirs)"

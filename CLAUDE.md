@@ -6,14 +6,17 @@ export/re-import cycle. If a conversation ever mentions an Oryx
 `_source.zip`, treat it as a one-off reference import (e.g. for porting to
 a new physical board), not something to build against directly.
 
-The same logical keymap is also ported to a ZSA Moonlander in
-`keymap-moonlander/`. **The Voyager (`keymap/`) is the source of truth.**
-When changing shared logic (combos, Alt-Tab/gaming mechanics, lighting
-philosophy, layer semantics), make the change in `keymap/keymap.c` first,
-then re-apply it to `keymap-moonlander/keymap.c` by hand — the two files
-are independent C sources, not generated from each other, so nothing
-re-syncs them automatically. See "Porting to a new board" below for how
-the Voyager's 52 keys map onto the Moonlander's 72.
+The same logical keymap is also generated for a ZSA Moonlander. **The
+Voyager (`keymap/keymap.c`) is the single source of truth.**
+`keymap-moonlander/keymap.c` is a **generated file — never hand-edit it.**
+`scripts/generate_moonlander.py` derives it from `keymap/keymap.c` by
+re-mapping the Voyager's 52 argument-position keycodes/colors onto their
+Moonlander equivalents and copying every other line (enums, combos,
+`process_record_user`, lighting functions — none of it is keyboard-
+specific) verbatim. `scripts/build.sh moonlander` runs the generator
+automatically before compiling, so the two can't drift out of sync as long
+as you only ever edit `keymap/keymap.c`. See "Porting to a new board"
+below for the exact position mapping.
 
 ## Build environment
 
@@ -44,23 +47,28 @@ the Voyager's 52 keys map onto the Moonlander's 72.
 
 ## Workflow for making changes
 
-1. Edit `keymap/keymap.c` (or the other three files) directly. If the
-   change is to shared logic (not a Voyager-only physical-layout tweak),
-   also apply it to `keymap-moonlander/keymap.c` — see the note at the top
-   of this file.
-2. Run `./scripts/build.sh` (Voyager) and/or `./scripts/build.sh
-   moonlander` from the repo root, for whichever board(s) changed.
+1. Edit `keymap/keymap.c` (or the other three Voyager files) directly.
+   Never edit `keymap-moonlander/keymap.c` — it's generated (see above).
+2. Run `./scripts/build.sh` for the Voyager. For the Moonlander, run
+   `./scripts/build.sh moonlander` — this regenerates
+   `keymap-moonlander/keymap.c` from the Voyager source first, then
+   compiles. (You can also run `./scripts/generate_moonlander.py` on its
+   own if you just want to inspect the generated file without compiling.)
 3. The `.bin` lands in `build/` and gets copied to Windows Downloads
    automatically. Tell the user to flash it with **Keymapp** (not Wally —
    deprecated) and briefly summarize what changed.
-4. Run `./scripts/render_layouts.py` (and/or `./scripts/render_layouts.py
-   moonlander`) whenever a keymap.c changed — it regenerates that board's
-   `layout*/*.svg` from the current keymap and splices fresh image embeds
-   into README.md between that board's `START`/`END` markers. Keep the
-   `LAYER_NAMES` dict at the top of that script in sync if a layer's
-   purpose changes or a layer is added/removed — it's shared across boards.
+4. Run `./scripts/render_layouts.py` whenever `keymap/keymap.c` changed —
+   it regenerates `layout/*.svg` from the current keymap and splices fresh
+   image embeds into README.md between the `LAYOUT:START`/`LAYOUT:END`
+   markers. Keep the `LAYER_NAMES` dict at the top of that script in sync
+   if a layer's purpose changes or a layer is added/removed. There's no
+   separate diagram generation for the Moonlander — it's not meant to be
+   "first class," just kept logically in sync.
 5. Commit when the user asks you to (same rule as everywhere else — don't
-   commit unprompted).
+   commit unprompted). `keymap-moonlander/keymap.c` is still checked into
+   git even though it's generated, so the repo is buildable without
+   re-running the generator — but always regenerate before committing a
+   Voyager change, so the committed Moonlander file never goes stale.
 
 ## The LED-index gotcha (read before touching any color)
 
@@ -243,14 +251,19 @@ porting was "exact same layout" with the extra keys left idle, specifically:
   the right)
 - the entire bottom main row per half (including the big wide key under
   the pinky column)
-- the outermost of each half's 3 regular thumb-cluster keys (the 2
-  innermost are the real thumb keys)
+- the innermost (closest to the center gap) of each half's 3 regular
+  thumb-cluster keys. The outer two are the real thumb keys — these are
+  the same two physical keys Justin's actual Moonlander layout already
+  uses for Ctrl/Meta on the left and Enter/Space-ish keys on the right, so
+  the port reuses the slots his muscle memory already expects rather than
+  the innermost two (which don't match his existing habits).
 
 This gives a clean, total 1:1 mapping (52 used + 20 unused = 72) with zero
 ambiguity — every real Voyager key has exactly one Moonlander home, and
 every leftover Moonlander key is unused. The mapping (Moonlander argument
 position → Voyager argument position, both 0-indexed, left-to-right
-top-to-bottom thumbs-last within each board's own `LAYOUT_xxx(...)` order):
+top-to-bottom thumbs-last within each board's own `LAYOUT_xxx(...)` order)
+is hardcoded as `MOONLANDER_TO_VOYAGER` in `scripts/generate_moonlander.py`:
 
 | Moonlander row | Moonlander positions | Voyager positions | Notes |
 |---|---|---|---|
@@ -266,19 +279,21 @@ top-to-bottom thumbs-last within each board's own `LAYOUT_xxx(...)` order):
 | row 3 | 42-47 | 36-41 | Shift,Z,X,C,V,B (no edge keys on this row) |
 | row 3 | 48-53 | 42-47 | N,M,,,.,/,Shift |
 | row 4 | 54-65 | — | unused (whole bottom row, both halves + big wide keys) |
-| thumb | 66 | — | unused (left outer thumb key) |
-| thumb | 67,68 | 48,49 | Ctrl, `LR 1` (left inner two) |
-| thumb | 69,70 | 50,51 | Enter, Space (right inner two) |
-| thumb | 71 | — | unused (right outer thumb key) |
+| thumb | 66,67 | 48,49 | Ctrl, `LR 1` (left outer, left middle) |
+| thumb | 68 | — | unused (left inner/innermost thumb key) |
+| thumb | 69 | — | unused (right inner/innermost thumb key) |
+| thumb | 70,71 | 50,51 | Enter, Space (right middle, right outer) |
 
 Everything that isn't the two `keymaps[]`/`ledmap[]` arrays — the custom
 keycode enum, combo definitions, `process_combo_event`, Alt-Tab/
 `GAME_CTL`/`GAME_TAB` logic, `set_layer_color`/`rgb_matrix_indicators_user`
-— is copied verbatim between the two keymap.c files; none of it is
-keyboard-specific. Combos in particular transfer with zero changes, since
-QMK combos trigger on keycodes, not physical position.
+— is copied verbatim by `scripts/generate_moonlander.py` from
+`keymap/keymap.c`; none of it is keyboard-specific. Combos in particular
+transfer with zero changes, since QMK combos trigger on keycodes, not
+physical position.
 
-If the physical choice of *which* thumb key is idle (or anything else
-above) turns out to be uncomfortable in practice, it's a one-line swap in
-`keymap-moonlander/keymap.c`'s `keymaps[]`/`ledmap[]` arrays at the
-relevant argument position — no need to regenerate anything from scratch.
+If the physical choice of which key is idle in any of the above categories
+needs to change, edit `MOONLANDER_TO_VOYAGER` in
+`scripts/generate_moonlander.py` and re-run it (or `scripts/build.sh
+moonlander`) — don't hand-edit `keymap-moonlander/keymap.c` itself, it'll
+just get overwritten on the next regeneration.

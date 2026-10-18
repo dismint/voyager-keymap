@@ -1,9 +1,9 @@
 # voyager-keymap
 
 Personal QMK keymap, developed locally — no more round-tripping through
-Oryx's web configurator and re-downloading exports. Primary target is a
-ZSA Voyager; the same logical layout is also ported to a ZSA Moonlander
-(see "Moonlander layout" below).
+Oryx's web configurator and re-downloading exports. `keymap/keymap.c` (the
+ZSA Voyager) is the single source of truth; the same logical layout is
+also generated for a ZSA Moonlander (see "Moonlander layout" below).
 
 ## Layers
 
@@ -70,24 +70,28 @@ underneath the grid.
 ## Repo layout
 
 ```
-keymap/             Voyager keymap source — keymap.c, config.h, rules.mk,
-                     keymap.json. Symlinked into the qmk_firmware checkout;
-                     edit these files directly.
-keymap-moonlander/  same, for the Moonlander port.
+keymap/                     Voyager keymap source — keymap.c, config.h,
+                             rules.mk, keymap.json. This is the single
+                             source of truth; symlinked into the
+                             qmk_firmware checkout. Edit these files
+                             directly.
+keymap-moonlander/          Moonlander keymap — GENERATED from keymap/ by
+                             scripts/generate_moonlander.py. Never hand-edit.
 scripts/
-  setup.sh           one-time (idempotent) environment setup, both boards
-  build.sh           compile + stage a flashable .bin: `build.sh [voyager|moonlander]`
-  arg_to_led.py      maps a key's LAYOUT_xxx(...) argument position to its
-                     ledmap[] LED index (these orders differ — see CLAUDE.md)
-  render_ledmap.py   turns argument-order colors into a ready-to-paste
-                     ledmap[] row
-  render_layouts.py  renders a keymap.c into the SVG diagrams above and
-                     updates this README: `render_layouts.py [voyager|moonlander]`
-                     — run after any keymap.c change
-layout/              generated Voyager SVG diagrams (don't hand-edit)
-layout-moonlander/   generated Moonlander SVG diagrams (don't hand-edit)
-build/               compiled .bin output (gitignored)
-CLAUDE.md            notes for Claude Code sessions working on this repo
+  setup.sh                  one-time (idempotent) environment setup, both boards
+  build.sh                  compile + stage a flashable .bin: `build.sh [voyager|moonlander]`
+                             (moonlander regenerates keymap-moonlander/ first)
+  generate_moonlander.py    derives keymap-moonlander/keymap.c from keymap/keymap.c
+  arg_to_led.py             maps a key's LAYOUT_xxx(...) argument position to its
+                             ledmap[] LED index (these orders differ — see CLAUDE.md)
+  render_ledmap.py          turns argument-order colors into a ready-to-paste
+                             ledmap[] row
+  render_layouts.py         renders keymap/keymap.c into the SVG diagrams
+                             above and updates this README — run after any
+                             keymap.c change
+layout/                      generated Voyager SVG diagrams (don't hand-edit)
+build/                       compiled .bin output (gitignored)
+CLAUDE.md                    notes for Claude Code sessions working on this repo
 ```
 
 ## Building and flashing
@@ -104,45 +108,27 @@ flashing tool — Wally is deprecated).
 
 ## Moonlander layout
 
-The same logical keymap, ported to a ZSA Moonlander — identical keycodes,
-combos, and Alt-Tab/gaming-layer mechanics, just placed on different
-physical keys. The Moonlander has more keys than the Voyager per half (an
-extra pinky column, an extra main row, and a 4-key thumb cluster instead of
-2), so the 52 real Voyager keys map 1:1 onto their Moonlander equivalents
-and the extra 20 keys are left unused, matching the intent of "exact same
-layout, extra keys idle":
+The same logical keymap is also generated for a ZSA Moonlander — identical
+keycodes, combos, and Alt-Tab/gaming-layer mechanics, just placed on
+different physical keys. `keymap-moonlander/keymap.c` is a **generated
+file, not hand-edited**: `scripts/generate_moonlander.py` derives it from
+`keymap/keymap.c` every time (and `scripts/build.sh moonlander` runs it
+automatically), so the two can never drift out of sync.
+
+The Moonlander has more keys than the Voyager per half (an extra pinky
+column, an extra main row, and a 4-key thumb cluster instead of 2), so the
+52 real Voyager keys map 1:1 onto their Moonlander equivalents and the
+extra 20 keys are left unused:
 
 - the 3-button inner-edge column on each half (next to the thumb cluster,
   rows 0-2)
 - the entire bottom main row on each half, including the big wide key
-- 1 of each half's 3 regular thumb-cluster keys (the outermost one) — the
-  2 innermost are the Voyager's real thumb keys (Ctrl/`LR 1` left,
-  Enter/Space right)
+- 1 of each half's 3 regular thumb-cluster keys (the innermost, closest to
+  the center gap) — the outer two are the Voyager's real thumb keys
+  (Ctrl/`LR 1` left, Enter/Space right), matching the physical keys
+  Justin's actual Moonlander layout already uses there
 
-See `keymap-moonlander/keymap.c` and `CLAUDE.md` for the exact argument-
-position mapping if the unused-key choices (particularly which thumb key)
-need adjusting.
-
-<!-- LAYOUT_MOONLANDER:START (generated by scripts/render_layouts.py — do not hand-edit) -->
-
-### Layer 0 — Base
-
-![Layer 0](layout-moonlander/layer0.svg)
-
-### Layer 1 — Symlayer
-
-![Layer 1](layout-moonlander/layer1.svg)
-
-### Layer 2 — ArrowFN
-
-![Layer 2](layout-moonlander/layer2.svg)
-
-### Layer 3 — Gaming
-
-![Layer 3](layout-moonlander/layer3.svg)
-
-### Layer 4 — Numpad
-
-![Layer 4](layout-moonlander/layer4.svg)
-
-<!-- LAYOUT_MOONLANDER:END -->
+No separate diagrams are generated for it — the Voyager diagrams above are
+the reference for the logical layout. See `scripts/generate_moonlander.py`
+and `CLAUDE.md` for the exact argument-position mapping if the unused-key
+choices (particularly which thumb key) need adjusting.
