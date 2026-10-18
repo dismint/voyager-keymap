@@ -306,6 +306,12 @@ def main():
             if token == "KC_TRANSPARENT" and layer_idx != 0 and base_tokens is not None:
                 display_token = base_tokens[argpos]
                 inherited = True
+            elif layer_idx != 0 and base_tokens is not None and token == base_tokens[argpos]:
+                # explicitly redeclared but identical to layer 0 (e.g. Gaming's
+                # Backspace) -- same "unchanged from base" treatment as a real
+                # transparent key, so it doesn't look brighter/more prominent
+                # than genuinely-transparent neighbors for no reason
+                inherited = True
 
             label = label_for(display_token)
             svg.append(
