@@ -93,6 +93,13 @@ LABELS = {
 
 COMBO_MARKER_COLOR = "#ff4fd8"
 
+# which layer's diagram shows each combo's dot marker, keyed by the combo's
+# variable name in keymap.c (e.g. "combo0"). combos not listed here default
+# to layer 0. this is purely a display choice -- doesn't affect the "Works
+# on" column, which is computed from the actual keymap regardless.
+COMBO_DISPLAY_LAYER = {}
+DEFAULT_COMBO_DISPLAY_LAYER = 0
+
 CANVAS_PAD = 20
 UNIT = 58
 KEY_SIZE = 50
@@ -169,7 +176,7 @@ def parse_layers(text, array_name):
 
 
 def parse_combos(text):
-    """returns [([trigger keycode tokens], action token), ...]"""
+    """returns [(combo_name, [trigger keycode tokens], action token), ...]"""
     combo_defs = {}
     for m in re.finditer(r"const uint16_t PROGMEM (\w+)\[\] = \{([^}]*)\};", text):
         name = m.group(1)
@@ -185,7 +192,7 @@ def parse_combos(text):
         content = extract_balanced(body, m.end() - 1, "(", ")")
         name, action = split_top_level(content)[:2]
         if name in combo_defs:
-            combos.append((combo_defs[name], action))
+            combos.append((name, combo_defs[name], action))
     return combos
 
 
@@ -241,18 +248,22 @@ def main():
     # nothing on that layer remaps the physical keys involved (checking only
     # a one-level fallback to layer 0, same simplification used for
     # "inherited" key labels below -- doesn't model multi-layer nesting chains)
-    combo_positions = [[base_tokens.index(k) for k in keys] for keys, _ in combos]
-    active_positions_by_layer = {}
+    # this is used for the "Works on" column -- it's informational, separate
+    # from which single layer's diagram actually shows the dot marker.
+    combo_positions = [[base_tokens.index(k) for k in keys] for _, keys, _ in combos]
     valid_layers_by_combo = [[] for _ in combos]
     for layer_idx, layer_tokens in keymap_layers.items():
-        active = set()
-        for ci, (positions, (keys, action)) in enumerate(zip(combo_positions, combos)):
+        for ci, (positions, (name, keys, action)) in enumerate(zip(combo_positions, combos)):
             effective = [layer_tokens[p] if layer_tokens[p] != "KC_TRANSPARENT" else base_tokens[p]
                          for p in positions]
             if effective == keys:
-                active.update(positions)
                 valid_layers_by_combo[ci].append(layer_idx)
-        active_positions_by_layer[layer_idx] = active
+
+    # one chosen layer per combo gets the dot marker, for a clean diagram
+    display_positions_by_layer = {idx: set() for idx in keymap_layers}
+    for positions, (name, keys, action) in zip(combo_positions, combos):
+        display_layer = COMBO_DISPLAY_LAYER.get(name, DEFAULT_COMBO_DISPLAY_LAYER)
+        display_positions_by_layer.setdefault(display_layer, set()).update(positions)
 
     for layer_idx in sorted(keymap_layers):
         tokens = keymap_layers[layer_idx]
@@ -289,7 +300,7 @@ def main():
                     f'<text x="{px + KEY_SIZE/2}" y="{py + KEY_SIZE/2 + 4}" '
                     f'text-anchor="middle" font-size="{fs}" fill="{text_color}"{opacity}>{xml_escape(label)}</text>'
                 )
-            if argpos in active_positions_by_layer[layer_idx]:
+            if argpos in display_positions_by_layer[layer_idx]:
                 svg.append(
                     f'<circle cx="{px + KEY_SIZE - 7}" cy="{py + 7}" r="4" '
                     f'fill="{COMBO_MARKER_COLOR}" stroke="#0d0d0d" stroke-width="1"/>'
@@ -310,16 +321,19 @@ def main():
 
     if combos:
         section_lines.append(
-            f'### Combos (marked <span style="color:{COMBO_MARKER_COLOR}">●</span> above, '
-            f"only on layers where the trigger keys aren't remapped to something else)"
+            f'### Combos (marked <span style="color:{COMBO_MARKER_COLOR}">●</span> on its '
+            f'listed display layer above; "works on" shows every layer it actually still fires on)'
         )
         section_lines.append("")
-        section_lines.append("| Keys | Action | Works on |")
-        section_lines.append("|---|---|---|")
-        for (keys, action), valid_layers in zip(combos, valid_layers_by_combo):
+        section_lines.append("| Keys | Action | Display layer | Works on |")
+        section_lines.append("|---|---|---|---|")
+        for (name, keys, action), valid_layers in zip(combos, valid_layers_by_combo):
             key_labels = " + ".join(label_for(k) for k in keys)
+            display_layer = COMBO_DISPLAY_LAYER.get(name, DEFAULT_COMBO_DISPLAY_LAYER)
             layers_str = ", ".join(str(n) for n in sorted(valid_layers)) or "none"
-            section_lines.append(f"| {key_labels} | {describe_action(action)} | {layers_str} |")
+            section_lines.append(
+                f"| {key_labels} | {describe_action(action)} | {display_layer} | {layers_str} |"
+            )
         section_lines.append("")
 
     section_lines.append("<!-- LAYOUT:END -->")
