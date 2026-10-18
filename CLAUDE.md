@@ -33,7 +33,12 @@ more Oryx export/re-import cycle. If a conversation ever mentions an Oryx
 3. The `.bin` lands in `build/` and gets copied to Windows Downloads
    automatically. Tell the user to flash it with **Keymapp** (not Wally —
    deprecated) and briefly summarize what changed.
-4. Commit when the user asks you to (same rule as everywhere else — don't
+4. Run `./scripts/render_layouts.py` whenever `keymap.c` changed — it
+   regenerates `layout/*.svg` from the current keymap and splices fresh
+   image embeds into README.md between the `LAYOUT:START`/`LAYOUT:END`
+   markers. Keep the `LAYER_NAMES` dict at the top of that script in sync
+   if a layer's purpose changes or a layer is added/removed.
+5. Commit when the user asks you to (same rule as everywhere else — don't
    commit unprompted).
 
 ## The LED-index gotcha (read before touching any color)
