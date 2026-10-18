@@ -40,12 +40,12 @@ LABELS = {
     "KC_TRANSPARENT": "",
     "KC_ESCAPE": "Esc",
     "KC_TAB": "Tab",
-    "KC_LEFT_GUI": "Gui",
+    "KC_LEFT_GUI": "Meta",
     "KC_LEFT_SHIFT": "Shift",
     "KC_RIGHT_SHIFT": "Shift",
     "KC_LEFT_CTRL": "Ctrl",
     "KC_LEFT_ALT": "Alt",
-    "KC_RIGHT_GUI": "Gui",
+    "KC_RIGHT_GUI": "Meta",
     "KC_ENTER": "Enter",
     "KC_SPACE": "Space",
     "KC_BSPC": "Bksp",
@@ -75,10 +75,10 @@ LABELS = {
     "KC_GRAVE": "`",
     "KC_TILD": "~",
     "KC_AMPR": "&",
-    "OSM(MOD_LSFT)": "Sft*",
-    "OSM(MOD_LGUI)": "Gui*",
-    "OSM(MOD_LALT)": "Alt*",
-    "OSM(MOD_LCTL)": "Ctl*",
+    "OSM(MOD_LSFT)": "OSM Sft",
+    "OSM(MOD_LGUI)": "OSM Meta",
+    "OSM(MOD_LALT)": "OSM Alt",
+    "OSM(MOD_LCTL)": "OSM Ctl",
     "LALT(LCTL(KC_SPACE))": "Omni",
     "LGUI(LSFT(KC_S))": "Snip",
     "ALT_TAB": "AltTab",
@@ -110,10 +110,10 @@ def label_for(token):
         return LABELS[token]
     m = re.match(r"^MO\((\d+)\)$", token)
     if m:
-        return f"Lyr{m.group(1)}"
+        return f"LR {m.group(1)}"
     m = re.match(r"^TG\((\d+)\)$", token)
     if m:
-        return f"Tgl{m.group(1)}"
+        return f"TO {m.group(1)}"
     m = re.match(r"^KC_([A-Z0-9]+)$", token)
     if m:
         return m.group(1).capitalize()
@@ -294,7 +294,7 @@ def main():
                 f'fill="{fill}" stroke="#444" stroke-width="1"/>'
             )
             if label:
-                fs = 11 if len(label) <= 5 else 9
+                fs = 11 if len(label) <= 5 else (9 if len(label) <= 7 else 7)
                 opacity = ' fill-opacity="0.45" font-style="italic"' if inherited else ""
                 svg.append(
                     f'<text x="{px + KEY_SIZE/2}" y="{py + KEY_SIZE/2 + 4}" '
