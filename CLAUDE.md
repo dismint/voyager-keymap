@@ -73,35 +73,34 @@ this catches category mistakes that the index math alone can't.
 
 ## Lighting philosophy
 
-Only light keys that actually do something on the active layer; everything
-unused/transparent stays dark (`{0,0,0}`). Beyond that baseline, **design
-each layer's lighting proactively** — infer the layer's purpose from its
-keycodes and give it its own visual identity, and make functionally special
-clusters (movement keys, numpad digits, a launcher key, etc.) pop in their
-own color rather than defaulting everything to the same bucket. Don't wait
-to be told exact colors each time.
+**As of the 4-color simplification, this is now a strict, closed palette —
+do not reintroduce per-layer unique colors or add a 5th category without
+being asked.** Only light keys that are genuinely remapped/active on that
+layer; anything transparent/inherited (unchanged from layer 0, e.g. WASD on
+the gaming layer) stays fully dark (`{0,0,0}`), even if it's functionally
+important on that layer — "changed" is what earns color, not "important."
 
-Current shared palette (HSV, hue/sat/val out of 255) — reuse these for
-continuity rather than inventing new ones per layer unless a layer's theme
-genuinely needs something new:
+| Color | HSV | Category | Used for |
+|---|---|---|---|
+| white (primary) | `0,0,255` | Primary | any plain functional key — letters, numbers, symbols, Enter/Backspace/Space. The default for "just a regular key." |
+| light green (layer) | `85,140,255` | Layer | any layer-switch key, `MO()` or `TG()` alike — color doesn't distinguish hold vs. toggle, the label text does (`LR n` vs `TO n`) |
+| light blue (modifier) | `150,170,255` | Modifier | Ctrl/Alt/Shift/Meta, held or one-shot (`OSM(...)`) alike — all 4 OSM variants share this one color now, not 4 distinct ones |
+| light orange (special) | `28,140,255` | Special | a unique, non-obvious mechanism that doesn't fit the other 3 — omnibar, the Windows+Shift+S screenshot shortcut, `ALT_TAB`, the gaming layer's `GAME_CTL`/`GAME_TAB` pair |
 
-| Color | HSV | Meaning |
-|---|---|---|
-| white | `0,0,255` | plain functional key (letters, numbers, Enter, Backspace, Space) |
-| light blue | `150,170,255` | modifier (Esc/Tab/Shift/Ctrl/GUI/Alt) |
-| light green | `85,140,255` | layer-switch key |
-| blue | `170,150,255` | symbols layer's punctuation/shortcut keys |
-| light orange | `28,140,255` | macro/launcher-style shortcut key (omnibar, screenshot shortcut) |
-| orange | `28,200,255` | function keys (F1-F12) |
-| purple | `191,180,255` | OSM GUI |
-| magenta | `213,180,255` | OSM Alt |
-| yellow | `43,190,255` | OSM Ctrl |
-| teal | `135,210,255` | numpad digits (layer 4) |
-| red | `0,200,255` | gaming-layer movement keys (WASD) |
+One sanctioned exception: the base layer's `1`-`5` number row keeps 5
+distinct colors as a legend (each previewing layers 0-4's old identity hue:
+white/blue/orange/red/teal) — this is intentionally decorative, not part of
+the 4-category system, and shouldn't be extended elsewhere.
 
 All saturations are deliberately kept in the ~140-210 range, not maxed at
 255 — the user explicitly prefers this softer look over harsh fully-
 saturated colors (confirmed preference, not a default).
+
+When a new key needs a color, pick the category by what the key *is*, not
+by what layer it's on: a modifier is always modifier-blue regardless of
+layer, a layer-switch key is always layer-green, and only genuinely unique
+one-off mechanisms get special-orange. Don't invent a 5th color for "this
+layer's theme" — that's exactly what got simplified away.
 
 ## Alt-Tab mechanics (there are two independent implementations)
 
