@@ -63,13 +63,6 @@ underneath the grid.
 
 ![Layer 4](layout/layer4.svg)
 
-### Combos (each combo's keys + action are also drawn directly on its display layer above, next to a dot in its own color; "works on" below shows every layer it actually still fires on, which can differ from where it's drawn)
-
-| | Keys | Action | Display layer | Works on |
-|---|---|---|---|---|
-| <span style="color:#ff4fd8">●</span> | D + F | Caps Lock | 0 | 0, 3, 4 |
-| <span style="color:#4fd8ff">●</span> | D + G | Toggle layer 3 (Gaming) | 0 | 0, 3, 4 |
-
 <!-- LAYOUT:END -->
 
 ## Repo layout
