@@ -30,6 +30,7 @@ enum combo_events {
   GAMING_COMBO,
   ALT_COMBO_LEFT,
   ALT_COMBO_RIGHT,
+  RGUI_COMBO,
 };
 
 
@@ -81,18 +82,21 @@ const uint16_t PROGMEM combo0[] = { KC_D, KC_F, COMBO_END};
 const uint16_t PROGMEM combo1[] = { KC_D, KC_G, COMBO_END};
 const uint16_t PROGMEM combo2[] = { KC_X, KC_C, COMBO_END};
 const uint16_t PROGMEM combo3[] = { KC_COMMA, KC_DOT, COMBO_END};
+const uint16_t PROGMEM combo4[] = { KC_M, KC_COMMA, COMBO_END};
 
 combo_t key_combos[COMBO_COUNT] = {
     [CAPS_COMBO] = COMBO(combo0, KC_CAPS),
     [GAMING_COMBO] = COMBO(combo1, TG(3)),
     [ALT_COMBO_LEFT] = COMBO_ACTION(combo2),
     [ALT_COMBO_RIGHT] = COMBO_ACTION(combo3),
+    [RGUI_COMBO] = COMBO_ACTION(combo4),
 };
 
 // X+C (left) and ,+. (right) both hold Alt for as long as EITHER combo is
 // still engaged -- releasing just one of the two chord keys doesn't let go,
 // only releasing both does (a combo is a single virtual key: held until
-// every one of its members is back up).
+// every one of its members is back up). M+, (right hand) holds Right GUI
+// the same way, independently.
 void process_combo_event(uint16_t combo_index, bool pressed) {
   switch (combo_index) {
     case ALT_COMBO_LEFT:
@@ -101,6 +105,13 @@ void process_combo_event(uint16_t combo_index, bool pressed) {
     case ALT_COMBO_RIGHT:
       right_alt_combo_held = pressed;
       break;
+    case RGUI_COMBO:
+      if (pressed) {
+        register_code(KC_RIGHT_GUI);
+      } else {
+        unregister_code(KC_RIGHT_GUI);
+      }
+      return;
     default:
       return;
   }

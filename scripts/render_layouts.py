@@ -114,6 +114,7 @@ DEFAULT_COMBO_DISPLAY_LAYER = 0
 COMBO_ACTION_LABELS = {
     "combo2": "Hold Alt",
     "combo3": "Hold Alt",
+    "combo4": "Hold Meta",
 }
 
 CANVAS_PAD = 20

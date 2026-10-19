@@ -18,6 +18,13 @@ automatically before compiling, so the two can't drift out of sync as long
 as you only ever edit `keymap/keymap.c`. See "Porting to a new board"
 below for the exact position mapping.
 
+**One thing the generator does NOT cover: `config.h`.** Each board has its
+own hand-written `config.h` (different `SERIAL_NUMBER`, intentionally).
+`COMBO_COUNT` lives there, not in `keymap.c` — if a combo is added or
+removed, update `COMBO_COUNT` in *both* `keymap/config.h` and
+`keymap-moonlander/config.h` by hand. A mismatch here compiles fine but
+silently drops or corrupts combos at runtime.
+
 ## Build environment
 
 - `~/qmk_firmware` is ZSA's QMK fork, checked out on branch **`firmware25`**
