@@ -6,7 +6,7 @@
 [![Static Badge](https://img.shields.io/badge/WEBSITE-dismint.dev-77743b?style=flat&labelColor=4d4539)](https://www.dismint.dev/)
 [![QMK](https://img.shields.io/badge/firmware-QMK-8caba1?style=flat&labelColor=4d4539)](https://qmk.fm)
 
-A QMK keymap for a ZSA Voyager, ported to a Moonlander as well. Lives, builds, and flashes entirely from this repo.
+QMK keymap for a ZSA Voyager, also ported to a Moonlander. Built and flashed directly from this repo, no Oryx.
 
 </div>
 
@@ -14,9 +14,7 @@ A QMK keymap for a ZSA Voyager, ported to a Moonlander as well. Lives, builds, a
 
 # Overview
 
-Oryx, ZSA's web configurator, works fine right up until you want something it doesn't support — custom combos, a layer-aware Alt-Tab, lighting that actually tells you which layer you're on. Past that point you're exporting a zip, hand-patching it, and re-importing forever. This repo exists to skip that loop entirely: the whole thing just lives in QMK directly.
-
-`keymap/keymap.c` is the actual source of truth — a normal C file, edited by hand. Everything else (the Moonlander port, the diagrams below, the LED colors) is generated from it, so there's nothing to keep in sync manually.
+`keymap/keymap.c` is the only hand-written file and the source of truth for everything else: the Moonlander keymap, the diagrams below, and the LED colors are all generated from it.
 
 # Layers
 
@@ -58,15 +56,15 @@ In the diagrams below, dimmed italic labels mean the key is transparent on that 
 
 # Lighting
 
-Four colors, used consistently everywhere: white for a plain key, light blue for a modifier, light green for a layer switch, light orange for anything one-off and non-obvious (Alt-Tab, the omnibar, the reset button). A key only lights up if it's actually different from Base — inherited keys stay dark no matter how important they are, since the point of the color is "this changed here," not "this matters."
+Four colors, used consistently: white for a plain key, light blue for a modifier, light green for a layer switch, light orange for anything one-off (Alt-Tab, the omnibar, the reset button). A key is only colored if it's changed from Base — inherited keys stay dark regardless of how functionally important they are.
 
-Two exceptions to that rule: the number row doubles as a layer indicator (one solid color per layer, so a glance at the top row tells you where you are), and ArrowFN's F-keys get their own shade of blue so they don't blend into the arrow keys next to them.
+Two exceptions: the number row is a layer indicator (one solid color per layer), and ArrowFN's F-keys get their own shade of blue to stand apart from the arrow keys.
 
 # Moonlander port
 
-The same keymap also runs on a Moonlander, generated rather than hand-written. `keymap-moonlander/keymap.c` is produced by `scripts/generate_moonlander.py`, which takes every key and color from the Voyager source and re-maps it onto the Moonlander's layout — `scripts/build.sh moonlander` runs this automatically, so the two never drift apart.
+`keymap-moonlander/keymap.c` is generated, not hand-written. `scripts/generate_moonlander.py` re-maps every key and color from the Voyager source onto the Moonlander's layout; `scripts/build.sh moonlander` runs it automatically before compiling.
 
-The Moonlander has more physical keys than the Voyager per half, so the extras are just left dark and unbound: the little 3-key column next to each thumb cluster, the entire bottom row, and the innermost of each thumb cluster's three keys. Everything else lines up one-to-one with the Voyager above.
+The Moonlander has more physical keys than the Voyager per half. The extras are left dark and unbound: the 3-key column next to each thumb cluster, the entire bottom row, and the innermost of each thumb cluster's three keys. Everything else maps one-to-one with the Voyager layout above.
 
 # Repo layout
 
@@ -93,4 +91,4 @@ CLAUDE.md               notes for anyone (human or otherwise) working on this re
 ./scripts/build.sh moonlander     # Moonlander
 ```
 
-The `.bin` lands in `build/`, and gets copied straight to the Windows Downloads folder if it's around. Flash it with **Keymapp** — Wally's deprecated at this point.
+The `.bin` lands in `build/` and gets copied to the Windows Downloads folder, if present. Flash it with **Keymapp** (Wally is deprecated).
