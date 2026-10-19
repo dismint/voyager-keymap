@@ -6,7 +6,7 @@
 [![Static Badge](https://img.shields.io/badge/WEBSITE-dismint.dev-77743b?style=flat&labelColor=4d4539)](https://www.dismint.dev/)
 [![QMK](https://img.shields.io/badge/firmware-QMK-8caba1?style=flat&labelColor=4d4539)](https://qmk.fm)
 
-My keymap for a ZSA Voyager, ported to a Moonlander as well. Lives, builds, and flashes entirely from this repo.
+A QMK keymap for a ZSA Voyager, ported to a Moonlander as well. Lives, builds, and flashes entirely from this repo.
 
 </div>
 
@@ -14,9 +14,9 @@ My keymap for a ZSA Voyager, ported to a Moonlander as well. Lives, builds, and 
 
 # Overview
 
-I used to do all my keyboard tinkering through Oryx, ZSA's web configurator, which works fine right up until you want something it doesn't support — custom combos, a layer-aware Alt-Tab, lighting that actually tells you which layer you're on. At that point you're exporting a zip, hand-patching it, and re-importing forever. This repo is what happened when I got tired of that loop and just moved the whole thing to QMK directly.
+Oryx, ZSA's web configurator, works fine right up until you want something it doesn't support — custom combos, a layer-aware Alt-Tab, lighting that actually tells you which layer you're on. Past that point you're exporting a zip, hand-patching it, and re-importing forever. This repo exists to skip that loop entirely: the whole thing just lives in QMK directly.
 
-`keymap/keymap.c` is the actual source of truth — a normal C file I edit by hand. Everything else (the Moonlander port, the diagrams below, the LED colors) is generated from it, so there's nothing to keep in sync manually.
+`keymap/keymap.c` is the actual source of truth — a normal C file, edited by hand. Everything else (the Moonlander port, the diagrams below, the LED colors) is generated from it, so there's nothing to keep in sync manually.
 
 # Layers
 
