@@ -1,47 +1,36 @@
+<div align="center">
+
 # voyager-keymap
 
-Personal QMK keymap, developed locally — no more round-tripping through
-Oryx's web configurator and re-downloading exports. `keymap/keymap.c` (the
-ZSA Voyager) is the single source of truth; the same logical layout is
-also generated for a ZSA Moonlander (see "Moonlander layout" below).
+[![Email](https://img.shields.io/badge/EMAIL-mintjjc%40gmail.com-4b726e?style=flat&labelColor=4d4539)](mailto:mintjjc@gmail.com)
+[![Static Badge](https://img.shields.io/badge/WEBSITE-dismint.dev-77743b?style=flat&labelColor=4d4539)](https://www.dismint.dev/)
+[![QMK](https://img.shields.io/badge/firmware-QMK-8caba1?style=flat&labelColor=4d4539)](https://qmk.fm)
 
-## Layers
+My keymap for a ZSA Voyager, ported to a Moonlander as well. Lives, builds, and flashes entirely from this repo.
 
-5 layers — **Base**, **Symlayer**, **ArrowFN**, **Gaming**, **Numpad**:
+</div>
 
-- **Base** (layer 0): standard QWERTY, with a real number row (1-0) on top,
-  `Esc`/`Tab`/`Shift`/`Ctrl`/`Meta` as modifiers, `Backspace` in the unused
-  top-right corner, and the left-thumb key holding **Symlayer**.
-- **Symlayer** (layer 1, hold left thumb): punctuation/symbols, a nested
-  **Numpad** (hold the `LR 4` key), one-shot mods (Shift/Meta/Alt/Ctrl — tap
-  for one-shot, hold-and-type for a normal held modifier), an omnibar
-  launcher shortcut, and **Alt-Tab**: hold the thumb, tap `Tab` to cycle,
-  release to select.
-- **ArrowFN** (layer 2): F-keys, arrow keys, left-hand Shift/Ctrl.
-- **Gaming** (layer 3, toggle with a `D`+`G` combo): left-hand-only by
-  design (right hand stays on the mouse). The left-thumb key is real Ctrl
-  that becomes Alt-Tab the moment you also tap `Tab` (see `GAME_CTL`/
-  `GAME_TAB` in keymap.c); a standalone Alt lives on the pinky's home
-  column so the hand never has to leave its resting position.
-- **Numpad** (layer 4, nested inside Symlayer, or toggle with `TO 4`):
-  numbers on the right hand.
+---
 
-Per-layer RGB lighting uses exactly 4 colors everywhere: white (plain key),
-light blue (modifier — Ctrl/Alt/Shift/Meta, held or one-shot alike), light
-green (layer-switch key, `LR`/`TO` alike), light orange (a unique per-layer
-mechanism — omnibar, the Alt-Tab keys, etc). A key only gets colored if it's
-actually changed on that layer — unchanged/inherited keys stay dark, even
-functionally important ones. Two deliberate exceptions: the `1`-`5` number
-row is a layer-identity strip (one solid color per layer, so you can tell
-which layer is active at a glance — Base is plain white, the others are
-each distinct), and ArrowFN's F-keys are a separate blue to set them apart
-from the arrows. See `CLAUDE.md` for the full palette.
+# Overview
 
-Dimmed italic labels below mean the key is transparent on that layer and
-just falls through to the base layer's keycode shown. Combos are drawn
-directly on their display layer — a colored dot (one color per combo, and
-multiple dots stack if a key is in more than one combo) plus a legend
-underneath the grid.
+I used to do all my keyboard tinkering through Oryx, ZSA's web configurator, which works fine right up until you want something it doesn't support — custom combos, a layer-aware Alt-Tab, lighting that actually tells you which layer you're on. At that point you're exporting a zip, hand-patching it, and re-importing forever. This repo is what happened when I got tired of that loop and just moved the whole thing to QMK directly.
+
+`keymap/keymap.c` is the actual source of truth — a normal C file I edit by hand. Everything else (the Moonlander port, the diagrams below, the LED colors) is generated from it, so there's nothing to keep in sync manually.
+
+# Layers
+
+Five layers: **Base**, **Symlayer**, **ArrowFN**, **Gaming**, **Numpad**.
+
+- **Base** — standard QWERTY with a real number row, `Esc`/`Tab`/`Shift`/`Ctrl`/`Meta` where you'd expect them, and the left thumb key holding Symlayer.
+- **Symlayer** *(hold left thumb)* — punctuation and symbols, one-shot modifiers (tap for one-shot, hold-and-type for a normal held modifier), an omnibar shortcut, and Alt-Tab: hold the thumb, tap `Tab` to cycle, let go to select.
+- **ArrowFN** — F-keys, arrows, left-hand Shift/Ctrl, and a keyboard reset button tucked in the unused top-right corner.
+- **Gaming** *(toggle with `D`+`G`)* — left-hand only, since the right hand's on the mouse. The thumb key is Ctrl that turns into Alt-Tab the instant you tap `Tab` with it, so the same muscle memory works whether or not you're in a game.
+- **Numpad** *(nested inside Symlayer, or toggle)* — numbers on the right hand.
+
+Two more combos worth knowing about: `X`+`C` on the left hand and `,`+`.` on the right both hold Alt for as long as either stays pressed — a second way to get at Alt without leaving the home row.
+
+In the diagrams below, dimmed italic labels mean the key is transparent on that layer and just falls through to Base. Colored dots mark combos, with a legend underneath.
 
 <!-- LAYOUT:START (generated by scripts/render_layouts.py — do not hand-edit) -->
 
@@ -67,68 +56,41 @@ underneath the grid.
 
 <!-- LAYOUT:END -->
 
-## Repo layout
+# Lighting
+
+Four colors, used consistently everywhere: white for a plain key, light blue for a modifier, light green for a layer switch, light orange for anything one-off and non-obvious (Alt-Tab, the omnibar, the reset button). A key only lights up if it's actually different from Base — inherited keys stay dark no matter how important they are, since the point of the color is "this changed here," not "this matters."
+
+Two exceptions to that rule: the number row doubles as a layer indicator (one solid color per layer, so a glance at the top row tells you where you are), and ArrowFN's F-keys get their own shade of blue so they don't blend into the arrow keys next to them.
+
+# Moonlander port
+
+The same keymap also runs on a Moonlander, generated rather than hand-written. `keymap-moonlander/keymap.c` is produced by `scripts/generate_moonlander.py`, which takes every key and color from the Voyager source and re-maps it onto the Moonlander's layout — `scripts/build.sh moonlander` runs this automatically, so the two never drift apart.
+
+The Moonlander has more physical keys than the Voyager per half, so the extras are just left dark and unbound: the little 3-key column next to each thumb cluster, the entire bottom row, and the innermost of each thumb cluster's three keys. Everything else lines up one-to-one with the Voyager above.
+
+# Repo layout
 
 ```
-keymap/                     Voyager keymap source — keymap.c, config.h,
-                             rules.mk, keymap.json. This is the single
-                             source of truth; symlinked into the
-                             qmk_firmware checkout. Edit these files
-                             directly.
-keymap-moonlander/          Moonlander keymap — GENERATED from keymap/ by
-                             scripts/generate_moonlander.py. Never hand-edit.
+keymap/                 Voyager source — keymap.c, config.h, rules.mk, keymap.json.
+                         The single source of truth, symlinked into qmk_firmware.
+keymap-moonlander/      Moonlander keymap, generated — don't edit by hand.
+layout/                 Generated SVG diagrams for the section above.
 scripts/
-  setup.sh                  one-time (idempotent) environment setup, both boards
-  build.sh                  compile + stage a flashable .bin: `build.sh [voyager|moonlander]`
-                             (moonlander regenerates keymap-moonlander/ first)
-  generate_moonlander.py    derives keymap-moonlander/keymap.c from keymap/keymap.c
-  arg_to_led.py             maps a key's LAYOUT_xxx(...) argument position to its
-                             ledmap[] LED index (these orders differ — see CLAUDE.md)
-  render_ledmap.py          turns argument-order colors into a ready-to-paste
-                             ledmap[] row
-  render_layouts.py         renders keymap/keymap.c into the SVG diagrams
-                             above and updates this README — run after any
-                             keymap.c change
-layout/                      generated Voyager SVG diagrams (don't hand-edit)
-build/                       compiled .bin output (gitignored)
-CLAUDE.md                    notes for Claude Code sessions working on this repo
+  setup.sh               one-time environment setup for both boards
+  build.sh               build + stage a flashable .bin: `build.sh [voyager|moonlander]`
+  generate_moonlander.py derives the Moonlander keymap from the Voyager one
+  render_layouts.py      renders keymap.c into the diagrams above
+  arg_to_led.py          maps a key's position to its LED index (see CLAUDE.md)
+  render_ledmap.py       turns a list of colors into a ready-to-paste ledmap[] row
+CLAUDE.md               notes for anyone (human or otherwise) working on this repo
 ```
 
-## Building and flashing
+# Building and flashing
 
+```sh
+./scripts/setup.sh               # once, clones and patches qmk_firmware
+./scripts/build.sh                # Voyager
+./scripts/build.sh moonlander     # Moonlander
 ```
-./scripts/setup.sh               # once — clones qmk_firmware, patches it, symlinks both keymaps
-./scripts/build.sh                # voyager (default)
-./scripts/build.sh moonlander     # moonlander
-```
 
-`build.sh` drops the compiled `.bin` in `build/` and (if present) copies it
-to the Windows Downloads folder. Flash it with **Keymapp** (ZSA's current
-flashing tool — Wally is deprecated).
-
-## Moonlander layout
-
-The same logical keymap is also generated for a ZSA Moonlander — identical
-keycodes, combos, and Alt-Tab/gaming-layer mechanics, just placed on
-different physical keys. `keymap-moonlander/keymap.c` is a **generated
-file, not hand-edited**: `scripts/generate_moonlander.py` derives it from
-`keymap/keymap.c` every time (and `scripts/build.sh moonlander` runs it
-automatically), so the two can never drift out of sync.
-
-The Moonlander has more keys than the Voyager per half (an extra pinky
-column, an extra main row, and a 4-key thumb cluster instead of 2), so the
-52 real Voyager keys map 1:1 onto their Moonlander equivalents and the
-extra 20 keys are left unused:
-
-- the 3-button inner-edge column on each half (next to the thumb cluster,
-  rows 0-2)
-- the entire bottom main row on each half, including the big wide key
-- 1 of each half's 3 regular thumb-cluster keys (the innermost, closest to
-  the center gap) — the outer two are the Voyager's real thumb keys
-  (Ctrl/`LR 1` left, Enter/Space right), matching the physical keys
-  Justin's actual Moonlander layout already uses there
-
-No separate diagrams are generated for it — the Voyager diagrams above are
-the reference for the logical layout. See `scripts/generate_moonlander.py`
-and `CLAUDE.md` for the exact argument-position mapping if the unused-key
-choices (particularly which thumb key) need adjusting.
+The `.bin` lands in `build/`, and gets copied straight to the Windows Downloads folder if it's around. Flash it with **Keymapp** — Wally's deprecated at this point.
