@@ -1,2 +1,4 @@
 build/
 __pycache__/
+keymap/secrets.h
+keymap-moonlander/secrets.h

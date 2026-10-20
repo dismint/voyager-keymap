@@ -163,6 +163,15 @@ def main():
     MOONLANDER_KEYMAP_C.write_text(header + text)
     print(f"wrote {MOONLANDER_KEYMAP_C}")
 
+    # keymap.c #includes "secrets.h", which is gitignored and local-only --
+    # mirror it alongside the generated file so it resolves the same way
+    # qmk_firmware's own same-directory include lookup expects.
+    voyager_secrets = VOYAGER_KEYMAP_C.parent / "secrets.h"
+    moonlander_secrets = MOONLANDER_KEYMAP_C.parent / "secrets.h"
+    if voyager_secrets.exists():
+        moonlander_secrets.write_text(voyager_secrets.read_text())
+        print(f"wrote {moonlander_secrets}")
+
 
 if __name__ == "__main__":
     main()

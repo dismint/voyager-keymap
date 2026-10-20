@@ -25,6 +25,16 @@ removed, update `COMBO_COUNT` in *both* `keymap/config.h` and
 `keymap-moonlander/config.h` by hand. A mismatch here compiles fine but
 silently drops or corrupts combos at runtime.
 
+**Secrets** (e.g. the `PW_DROP` macro's actual string) live in
+`keymap/secrets.h`, which is gitignored and never committed —
+`keymap.c` does `#include "secrets.h"` and references `#define`s from it
+(e.g. `PW_DROP_STRING`). `keymap/secrets.h.example` is the committed
+template. `generate_moonlander.py` mirrors `keymap/secrets.h` to
+`keymap-moonlander/secrets.h` automatically (if it exists) since the
+Moonlander keymap's `#include "secrets.h"` needs its own copy in that
+directory to resolve. Never put a real secret value directly in
+`keymap.c`/`keymap-moonlander/keymap.c` — this repo is public.
+
 ## Build environment
 
 The toolchain is **pinned via `flake.nix`/`flake.lock`**, committed to this

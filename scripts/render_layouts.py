@@ -95,6 +95,10 @@ LABELS = {
     "KC_DOWN": "Down",
     "KC_CAPS": "Caps Lock",
     "QK_BOOT": "Reset",
+    "PW_DROP": "PW Drop",
+    "RGB_LEDOFF": "RGB Off",
+    "RM_VALU": "Bright+",
+    "RM_VALD": "Bright-",
 }
 
 # one marker color per combo, assigned by combo definition order. add more
