@@ -114,6 +114,14 @@ void process_combo_event(uint16_t combo_index, bool pressed) {
   }
 }
 
+// Shift+Backspace sends Delete -- there's no dedicated Delete key anywhere
+// in this layout otherwise.
+const key_override_t delete_key_override = ko_make_basic(MOD_MASK_SHIFT, KC_BSPC, KC_DEL);
+
+const key_override_t *key_overrides[] = {
+    &delete_key_override,
+};
+
 
 
 extern rgb_config_t rgb_matrix_config;
