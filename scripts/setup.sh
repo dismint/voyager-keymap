@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # idempotent environment setup: clones ZSA's qmk_firmware fork if missing,
-# makes sure it's on the firmware25 branch, applies the python3.14 compat
-# patch it needs, and symlinks this repo's keymap/ (and keymap-moonlander/,
-# if present) into it. safe to re-run.
+# makes sure it's on the firmware25 branch, applies the python compat patch
+# it needs, and symlinks this repo's keymap/ (and keymap-moonlander/) into
+# it. safe to re-run. the toolchain/qmk CLI themselves come from this
+# repo's flake.nix (nix develop), not a floating nixpkgs channel -- nothing
+# here depends on anything already installed on the machine besides Nix.
 #
 # usage: scripts/setup.sh [voyager|moonlander]  (default: both)
 set -euo pipefail
@@ -13,7 +15,7 @@ BOARD="${1:-all}"
 
 if [ ! -d "$QMK_FIRMWARE" ]; then
   echo "cloning zsa/qmk_firmware..."
-  nix shell nixpkgs#qmk -c qmk setup zsa/qmk_firmware -b firmware25 --yes
+  nix develop "path:$REPO_DIR" --command qmk setup zsa/qmk_firmware -b firmware25 --yes
 fi
 
 cd "$QMK_FIRMWARE"
@@ -28,7 +30,7 @@ if [ "$(git branch --show-current)" != "firmware25" ]; then
   git submodule update --init --recursive
 fi
 
-# python 3.14 removed ast.Num (deprecated since 3.8); this qmk_firmware
+# python 3.12+ removed ast.Num (deprecated since 3.8); this qmk_firmware
 # checkout's math.py still uses it. patch to the ast.Constant equivalent.
 MATH_PY="lib/python/qmk/math.py"
 if grep -q "ast\.Num" "$MATH_PY"; then

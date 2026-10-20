@@ -27,6 +27,23 @@ silently drops or corrupts combos at runtime.
 
 ## Build environment
 
+The toolchain is **pinned via `flake.nix`/`flake.lock`**, committed to this
+repo — not resolved from whatever nixpkgs channel happens to be floating on
+the machine. `scripts/build.sh` and `scripts/setup.sh` both run everything
+inside `nix develop "path:$REPO_DIR" --command ...`. This means:
+
+- The exact same `qmk` CLI, ARM toolchain (`gcc-arm-embedded`), and Python
+  (with `appdirs` wired in via the devShell's `PYTHONPATH` — nixpkgs' `qmk`
+  package is missing that dependency otherwise) are used on every machine,
+  every time, regardless of when `nix flake update` was last run elsewhere.
+  Don't run commands through a bare `nix shell nixpkgs#qmk` — that resolves
+  against whatever nixpkgs is currently registered, which drifts and *will*
+  eventually hand you a different (possibly broken) toolchain build. This
+  happened once already: nixpkgs-unstable rolled forward mid-session and
+  the resolved `gcc-arm-embedded` build started segfaulting via the dynamic
+  linker on this machine. Pinning to `nixos-26.05` (a stable release
+  channel, not `-unstable`) in `flake.nix` is what fixes this permanently —
+  only `nix flake update` (a deliberate, reviewable action) can move it.
 - `~/qmk_firmware` is ZSA's QMK fork, checked out on branch **`firmware25`**
   (not `firmware24` — that branch is missing `modules/zsa/oryx`, the
   community module Oryx's own cloud builder links in, and firmware built
@@ -39,11 +56,6 @@ silently drops or corrupts combos at runtime.
   `-kb zsa/moonlander/reva` (there's no default revision at the top-level
   `zsa/moonlander`, so the bare path errors out). `scripts/build.sh
   moonlander` already knows this.
-- The nixpkgs `qmk` package is missing the `appdirs` python dependency.
-  `scripts/build.sh` and `scripts/setup.sh` work around this by resolving
-  it separately via `nix build nixpkgs#python3Packages.appdirs` and passing
-  it through `PYTHONPATH`. If `qmk compile`/`qmk setup` ever fails with
-  `Could not find module appdirs!`, that's the workaround to check.
 - This qmk_firmware checkout has one local patch on top of `firmware25`:
   `lib/python/qmk/math.py` uses the Python `ast.Num` API, removed in Python
   3.12+. `scripts/setup.sh` patches it to `ast.Constant` automatically. If
@@ -51,6 +63,9 @@ silently drops or corrupts combos at runtime.
 - `qmk compile` reads `config.h`/`rules.mk`/`keymap.json` from the keymap dir
   too (not just `keymap.c`) — all four files matter and all four live in
   `keymap/` here.
+- To bump the pinned toolchain deliberately: `nix flake update` from the
+  repo root, then rebuild both boards and confirm nothing broke before
+  committing the updated `flake.lock`.
 
 ## Workflow for making changes
 

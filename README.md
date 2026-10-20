@@ -61,6 +61,7 @@ keymap/                 Voyager source — keymap.c, config.h, rules.mk, keymap.
                          The single source of truth, symlinked into qmk_firmware.
 keymap-moonlander/      Moonlander keymap, generated — don't edit by hand.
 layout/                 Generated SVG diagrams for the section above.
+flake.nix, flake.lock   pinned build environment (qmk CLI, ARM toolchain) — see below.
 scripts/
   setup.sh               one-time environment setup for both boards
   build.sh               build + stage a flashable .bin: `build.sh [voyager|moonlander]`
@@ -73,6 +74,8 @@ CLAUDE.md               notes for anyone (human or otherwise) working on this re
 
 # Building and flashing
 
+The whole toolchain — `qmk`, the ARM compiler, Python deps — is pinned in `flake.nix`/`flake.lock`. No floating nixpkgs channel involved, so a build today and a build in a year use the exact same versions. Only prerequisite is Nix itself.
+
 ```sh
 ./scripts/setup.sh               # once, clones and patches qmk_firmware
 ./scripts/build.sh                # Voyager
@@ -80,3 +83,5 @@ CLAUDE.md               notes for anyone (human or otherwise) working on this re
 ```
 
 The `.bin` lands in `build/` and gets copied to the Windows Downloads folder, if present. Flash it with **Keymapp** (Wally is deprecated).
+
+To update the pinned toolchain: `nix flake update`, then rebuild both boards before committing `flake.lock`.
