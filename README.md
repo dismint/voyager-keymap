@@ -40,6 +40,10 @@ QMK keymap for a ZSA Voyager, also ported to a Moonlander. Built and flashed dir
 
 ![Layer 4](layout/layer4.svg)
 
+### Layer 5 — Sturdy
+
+![Layer 5](layout/layer5.svg)
+
 <!-- LAYOUT:END -->
 
 # Lighting
@@ -51,6 +55,7 @@ The top two rows have blacked-out keycaps with no LED shine-through, so only the
 - **ArrowFN** — pastel green arrow shape: the entire bottom row plus the inner top-row key and both thumbs per hand, angling in toward the center.
 - **Gaming** — pastel rainbow sweep across the left hand only (right hand's on the mouse, stays dark).
 - **Numpad** — flat pastel teal across the entire right hand, left hand dark.
+- **Sturdy** — flat pastel purple across both hands, no gradient.
 
 # Moonlander port
 

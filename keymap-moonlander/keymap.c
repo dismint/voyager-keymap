@@ -19,6 +19,7 @@ enum custom_keycodes {
   GAME_TAB,
   RGB_LEDOFF,
   PW_DROP,
+  MAGIC,
 };
 
 static bool is_alt_tab_active = false;
@@ -27,6 +28,12 @@ static bool game_alt_active = false;
 static bool left_alt_combo_held = false;
 static bool right_alt_combo_held = false;
 static bool combo_alt_registered = false;
+// tracks whatever keycode was most recently pressed, for the Sturdy
+// layer's `magic` key (see the MAGIC case in process_record_user) --
+// read BEFORE it gets updated for the current keypress, so MAGIC's own
+// handler sees what came immediately before it, including a second
+// consecutive MAGIC press.
+static uint16_t magic_last_keycode = KC_NO;
 
 enum combo_events {
   CAPS_COMBO = 0,
@@ -34,6 +41,8 @@ enum combo_events {
   ALT_COMBO_LEFT,
   ALT_COMBO_RIGHT,
   RGUI_COMBO,
+  STURDY_ON_COMBO,
+  STURDY_OFF_COMBO,
 };
 
 
@@ -52,7 +61,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     KC_TRANSPARENT,   MO(2),            LGUI(LSFT(KC_S)), KC_TRANSPARENT,   MO(4),            KC_EQUAL,         KC_TRANSPARENT,                                  KC_TRANSPARENT,   KC_HASH,          KC_LPRN,          KC_RPRN,          KC_MINUS,         KC_UNDS,          KC_ASTR,         
     KC_TRANSPARENT,   OSM(MOD_LSFT),    OSM(MOD_LGUI),    OSM(MOD_LALT),    OSM(MOD_LCTL),    KC_TRANSPARENT,                                  KC_DLR,           KC_LBRC,          KC_RBRC,          KC_GRAVE,         KC_TILD,          KC_AMPR,         
     KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,                                  KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,  
-    KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,                                  KC_TRANSPARENT,   KC_RIGHT_GUI,     KC_BSPC
+    KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,                                  KC_TRANSPARENT,   KC_TRANSPARENT,   KC_BSPC
   ),
   [2] = LAYOUT_moonlander(
     KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,                                  KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   QK_BOOT,         
@@ -78,6 +87,14 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,                                  KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,  
     KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,                                  KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT
   ),
+  [5] = LAYOUT_moonlander(
+    KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,                                  KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,  
+    KC_TRANSPARENT,   KC_V,             KC_M,             KC_L,             KC_C,             KC_P,             KC_TRANSPARENT,                                  KC_TRANSPARENT,   KC_X,             KC_F,             KC_O,             KC_U,             KC_J,             KC_TRANSPARENT,  
+    KC_TRANSPARENT,   KC_S,             KC_T,             KC_R,             KC_D,             KC_Y,             KC_TRANSPARENT,                                  KC_TRANSPARENT,   KC_DOT,           KC_N,             KC_A,             KC_E,             KC_I,             KC_TRANSPARENT,  
+    KC_TRANSPARENT,   KC_Z,             KC_K,             KC_Q,             KC_G,             KC_W,                                            KC_B,             KC_H,             KC_QUOTE,         KC_SCLN,          KC_COMMA,         KC_TRANSPARENT,  
+    KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,                                  KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,  
+    KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,                                  KC_TRANSPARENT,   MAGIC,            KC_TRANSPARENT
+  ),
 };
 
 
@@ -86,6 +103,8 @@ const uint16_t PROGMEM combo1[] = { KC_D, KC_G, COMBO_END};
 const uint16_t PROGMEM combo2[] = { KC_X, KC_C, COMBO_END};
 const uint16_t PROGMEM combo3[] = { KC_COMMA, KC_DOT, COMBO_END};
 const uint16_t PROGMEM combo4[] = { KC_M, KC_COMMA, COMBO_END};
+const uint16_t PROGMEM combo5[] = { KC_Z, KC_SLASH, COMBO_END};
+const uint16_t PROGMEM combo6[] = { KC_Z, KC_COMMA, COMBO_END};
 
 combo_t key_combos[COMBO_COUNT] = {
     [CAPS_COMBO] = COMBO(combo0, KC_CAPS),
@@ -93,6 +112,13 @@ combo_t key_combos[COMBO_COUNT] = {
     [ALT_COMBO_LEFT] = COMBO_ACTION(combo2),
     [ALT_COMBO_RIGHT] = COMBO_ACTION(combo3),
     [RGUI_COMBO] = COMBO_ACTION(combo4),
+    // same two physical keys (Z + the key next to the right pinky) toggle
+    // the Sturdy layer both ways -- from Base that key is "/" (Z+/ turns
+    // Sturdy on), but Sturdy's own layout puts "," there instead, so the
+    // way back off is Z+, (Z itself is the one letter that sits in the
+    // same spot on both layouts).
+    [STURDY_ON_COMBO] = COMBO(combo5, TG(5)),
+    [STURDY_OFF_COMBO] = COMBO(combo6, TG(5)),
 };
 
 // X+C (left) and ,+. (right) both hold Alt for as long as EITHER combo is
@@ -161,6 +187,8 @@ const uint8_t PROGMEM ledmap[][RGB_MATRIX_LED_COUNT][3] = {
 
     [4] = { {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {135,140,255}, {135,140,255}, {0,0,0}, {0,0,0}, {0,0,0}, {135,140,255}, {135,140,255}, {0,0,0}, {0,0,0}, {0,0,0}, {135,140,255}, {135,140,255}, {0,0,0}, {0,0,0}, {0,0,0}, {135,140,255}, {135,140,255}, {0,0,0}, {0,0,0}, {0,0,0}, {135,140,255}, {135,140,255}, {0,0,0}, {0,0,0}, {0,0,0}, {135,140,255}, {135,140,255}, {0,0,0}, {0,0,0}, {0,0,0}, {135,140,255}, {135,140,255}, {0,0,0}, {0,0,0} },
 
+    [5] = { {0,0,0}, {0,0,0}, {191,130,255}, {191,130,255}, {0,0,0}, {0,0,0}, {0,0,0}, {191,130,255}, {191,130,255}, {0,0,0}, {0,0,0}, {0,0,0}, {191,130,255}, {191,130,255}, {0,0,0}, {0,0,0}, {0,0,0}, {191,130,255}, {191,130,255}, {0,0,0}, {0,0,0}, {0,0,0}, {191,130,255}, {191,130,255}, {0,0,0}, {0,0,0}, {0,0,0}, {191,130,255}, {191,130,255}, {0,0,0}, {0,0,0}, {0,0,0}, {191,130,255}, {191,130,255}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {191,130,255}, {191,130,255}, {0,0,0}, {0,0,0}, {0,0,0}, {191,130,255}, {191,130,255}, {0,0,0}, {0,0,0}, {0,0,0}, {191,130,255}, {191,130,255}, {0,0,0}, {0,0,0}, {0,0,0}, {191,130,255}, {191,130,255}, {0,0,0}, {0,0,0}, {0,0,0}, {191,130,255}, {191,130,255}, {0,0,0}, {0,0,0}, {0,0,0}, {191,130,255}, {191,130,255}, {0,0,0}, {0,0,0}, {0,0,0}, {191,130,255}, {191,130,255}, {0,0,0}, {0,0,0} },
+
 };
 
 void set_layer_color(int layer) {
@@ -200,6 +228,9 @@ bool rgb_matrix_indicators_user(void) {
       case 4:
         set_layer_color(4);
         break;
+      case 5:
+        set_layer_color(5);
+        break;
      default:
         if (rgb_matrix_get_flags() == LED_FLAG_NONE) {
           rgb_matrix_set_color_all(0, 0, 0);
@@ -216,7 +247,68 @@ bool rgb_matrix_indicators_user(void) {
 
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+  // capture the tracker's value from BEFORE this keypress updates it, so
+  // MAGIC's own handler below sees whatever came immediately before it
+  // (including a second consecutive MAGIC press, which must output "n").
+  uint16_t magic_prev_keycode = magic_last_keycode;
+  if (record->event.pressed) {
+    magic_last_keycode = keycode;
+  }
+
   switch (keycode) {
+
+    case MAGIC:
+      // Sturdy layer's adaptive "magic" key, ported from Magic Sturdy
+      // (github.com/Ikcelaks/keyboard_layouts). Output depends on
+      // whichever key was typed immediately before this one; a second
+      // press in a row always outputs "n" regardless of what came before
+      // that first press.
+      if (record->event.pressed) {
+        if (magic_prev_keycode == MAGIC) {
+          SEND_STRING("n");
+        } else {
+          switch (magic_prev_keycode) {
+            case KC_A: SEND_STRING("o"); break;
+            case KC_B: SEND_STRING("efore"); break;
+            case KC_C: SEND_STRING("y"); break;
+            case KC_D: SEND_STRING("y"); break;
+            case KC_E: SEND_STRING("u"); break;
+            case KC_G: SEND_STRING("y"); break;
+            case KC_I: SEND_STRING("on"); break;
+            case KC_J: SEND_STRING("ust"); break;
+            case KC_K: SEND_STRING("s"); break;
+            case KC_L: SEND_STRING("k"); break;
+            case KC_M: SEND_STRING("ent"); break;
+            case KC_N: SEND_STRING("ion"); break;
+            case KC_O: SEND_STRING("a"); break;
+            case KC_P: SEND_STRING("y"); break;
+            case KC_R: SEND_STRING("l"); break;
+            case KC_S: SEND_STRING("k"); break;
+            case KC_T: SEND_STRING("ment"); break;
+            case KC_U: SEND_STRING("e"); break;
+            case KC_V: SEND_STRING("er"); break;
+            case KC_W: SEND_STRING("hich"); break;
+            case KC_X: SEND_STRING("es"); break;
+            case KC_Y: SEND_STRING("p"); break;
+            case KC_COMMA: SEND_STRING(" but"); break;
+            case KC_DOT: SEND_STRING("\\"); break;
+            case KC_MINUS: SEND_STRING(">"); break;
+            case KC_EQUAL: SEND_STRING(">"); break;
+            // "wspc": previous key was space, tab, enter, quote, or
+            // left-paren -- all treated as "end of word" for this purpose
+            case KC_SPACE:
+            case KC_TAB:
+            case KC_ENTER:
+            case KC_QUOTE:
+            case KC_LPRN:
+              SEND_STRING("the");
+              break;
+            default:
+              break;
+          }
+        }
+      }
+      return false;
 
     case RGB_SLD:
       if (record->event.pressed) {

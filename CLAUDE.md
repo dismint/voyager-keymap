@@ -174,6 +174,7 @@ gradient vs. half-lit), not just hue, so it's still legible by shape alone:
 | ArrowFN (2) | **arrow shape** — entire row3 both hands (the shaft) + the row2 key nearest the center gap per hand (col6 left / col1 right) + both thumb keys per hand. Forms an arrowhead angling in toward the center on each hand | pastel green `85,130,255` |
 | Gaming (3) | **pastel rainbow**, left hand only — each row2/row3 column pair (6 columns) shares one hue, sweeping red→orange→yellow→green→cyan→blue across the hand; the 2 left thumbs continue the sweep into purple/magenta. Right hand fully dark (it's on the mouse) | rainbow, `S=140,V=255`, hues `0,30,61,91,122,152,183,213` in column order |
 | Numpad (4) | flat solid single color, right hand only (row2+row3+thumbs, no gradient), left hand dark | pastel teal `135,140,255` |
+| Sturdy (5) | flat solid single color, **both hands**, row2+row3+thumbs, no gradient, no asymmetry — the one fully-symmetric flat-solid layer, distinguishing it by shape from Numpad (same "flat" idea, one-handed) and Base (gradient, not flat) | pastel purple `191,130,255` |
 
 All non-rainbow layers use one flat hue at `S≈130-140` (true pastel, lower
 than the old 140-210 "soft but still showing some saturation" range) — this
@@ -236,6 +237,63 @@ one briefly, since removed), watch for two generated-template bugs:
    ```
    Prefer plain dedicated keys over tap-dance for anything performance-
    sensitive, though — that's why the Gaming layer moved away from it.
+
+## Sturdy layer (5) and the `magic` key
+
+Layer 5 is the [Sturdy](https://oxey.dev/layouts/sturdy/index.html) alpha
+layout (by Oxey, generated via Oxeylyzer) instead of QWERTY, plus a ported
+`magic` key from [Magic Sturdy](https://github.com/Ikcelaks/keyboard_layouts/blob/main/magic_sturdy/magic_sturdy.md)
+(by Ikcelaks). Deliberately **plain Sturdy, not Magic Sturdy's own letter
+layout** — Magic Sturdy reshuffles `Q`/`Z`/`X`/`J`/`B` to make room for its
+own magic/repeat keys inline in the grid, which needs a 6th column on two
+rows. Plain Sturdy is a clean 5-columns-per-hand-per-row layout (verified
+directly against oxey.dev, the creator's own site — an earlier AI-paraphrased
+source nearly got this wrong), which drops straight into the Voyager's 5 real
+letter columns with zero compromises. The `magic` key itself is bolted on
+separately, on its own thumb key, entirely independent of which letters sit
+where — the whole mechanism is keyed by **keycode identity** (`KC_A`, `KC_B`,
+...), not by column position, so it's fully portable between the two letter
+layouts.
+
+Everything on layer 5 is transparent (inheriting Base) except:
+- The 15 real letter positions per hand (row2 + row3, argpos 24-29/36-41
+  left, 30-35/42-46 right minus the outer-6th-column punctuation/modifier
+  slots) — set to Sturdy's letters. The mapping is literally the Sturdy grid
+  (`v m l c p / s t r d y / z k q g w` left, `x f o u j / . n a e i / b h ' ; ,`
+  right) laid directly onto the same physical slots QWERTY's letters occupy
+  on Base. Confirmed directly against oxey.dev (the creator's own page, via
+  raw `curl`, not an AI-summarized fetch) rather than trusting secondary
+  sources, since an AI-paraphrased source's structurally-similar-but-distinct
+  *Magic* Sturdy grid could easily have been mistaken for plain Sturdy's —
+  they share the same top/home rows but diverge on the bottom row
+  (`z k q g w` here vs. Magic Sturdy's `x k j g w`, since Magic Sturdy
+  relocates `Q` and chain-shuffles `X`/`J`/`B`/`Z` to make room for it).
+- The right-inner-thumb (argpos 50, `KC_ENTER` on Base) is `MAGIC` instead.
+
+**`MAGIC`'s behavior**: `process_record_user` tracks `magic_last_keycode`,
+updated to whatever was just pressed, captured into a local `magic_prev_keycode`
+*before* that update so `MAGIC`'s own handler sees what came immediately
+before it. The full A–Z (+ a few punctuation keys) rule table is ported
+verbatim from Magic Sturdy's docs — e.g. after `T` it sends `"ment"`, after
+a word-ending key (space/tab/enter/quote/left-paren) it sends `"the"`. A
+second press of `MAGIC` in a row always sends `"n"`, regardless of what came
+before the *first* press — this falls out naturally from the same tracking
+mechanism, since the first `MAGIC` press updates the tracker to `MAGIC`
+itself. This table was implemented from the raw markdown fetched directly
+via `curl` (not an AI-paraphrased `WebFetch` summary) specifically because
+exact symbols in a table like this matter for correctness — re-verify the
+same way if it ever needs re-deriving.
+
+**The two Sturdy-toggle combos use the same two physical keys but different
+keycodes** — `Z` sits in the identical slot on both Sturdy and QWERTY (the
+only letter that does, confirmed by diffing every position), so `Z+/` from
+Base turns Sturdy on. But Sturdy's own layout puts `,` where `/` sits on
+every other layer, so the way back off is `Z+,` (`STURDY_OFF_COMBO`,
+`combo6`) — not the same keycode pair, deliberately, by the user's own
+request ("same physical keys, if that means different combo that's ok").
+Don't try to "fix" this into one symmetric combo; a single keycode pair
+genuinely cannot toggle both ways here since the two layouts don't agree on
+what that second key produces.
 
 ## Gaming layer (3) constraints — read before changing anything on it
 

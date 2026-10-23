@@ -36,6 +36,7 @@ LAYER_NAMES = {
     2: "ArrowFN",
     3: "Gaming",
     4: "Numpad",
+    5: "Sturdy",
 }
 
 # how to render each keycode token. unmapped tokens fall back to a stripped
@@ -94,6 +95,7 @@ LABELS = {
     "KC_DOWN": "Down",
     "KC_CAPS": "Caps Lock",
     "QK_BOOT": "Reset",
+    "MAGIC": "Magic",
     "PW_DROP": "PW Drop",
     "RGB_LEDOFF": "RGB Off",
     "RM_VALU": "Bright+",
@@ -108,7 +110,12 @@ COMBO_COLORS = ["#ff4fd8", "#4fd8ff", "#ffd84f", "#9d4fff", "#4fff9d", "#ff8a4f"
 # variable name in keymap.c (e.g. "combo0"). combos not listed here default
 # to layer 0. this is purely a display choice -- doesn't affect the "Works
 # on" column, which is computed from the actual keymap regardless.
-COMBO_DISPLAY_LAYER = {}
+COMBO_DISPLAY_LAYER = {
+    # combo6 (Z+,) only makes sense once you're already on Sturdy -- that's
+    # the physical key pair that turns it back off, since Sturdy's own
+    # layout puts "," where "/" sits on every other layer.
+    "combo6": 5,
+}
 DEFAULT_COMBO_DISPLAY_LAYER = 0
 
 # display text for COMBO_ACTION(...) combos, keyed by the combo's variable
