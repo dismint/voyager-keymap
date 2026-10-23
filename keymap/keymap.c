@@ -57,8 +57,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   ),
   [2] = LAYOUT_voyager(
     KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,                                 KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,
-    ALT_TAB,        LALT(LCTL(KC_SPACE)),PW_DROP,        KC_TRANSPARENT, TG(5),          KC_PLUS,                                        KC_EXLM,        KC_LBRC,        KC_RBRC,        KC_PERC,        KC_PERC,        KC_TRANSPARENT,
-    KC_TRANSPARENT, MO(3),          LGUI(LSFT(KC_S)),KC_LEFT_SHIFT,  MO(5),          KC_EQUAL,                                       KC_ASTR,        KC_LPRN,        KC_RPRN,        KC_MINUS,       KC_TRANSPARENT, KC_TRANSPARENT,
+    ALT_TAB,        LALT(LCTL(KC_SPACE)),PW_DROP,        KC_TRANSPARENT, TG(5),          KC_PLUS,                                        KC_EXLM,        KC_LBRC,        KC_RBRC,        KC_PERC,        KC_BSLS,        KC_TRANSPARENT,
+    KC_TRANSPARENT, MO(3),          LGUI(LSFT(KC_S)),KC_LEFT_SHIFT,  MO(5),          KC_EQUAL,                                       KC_ASTR,        KC_LPRN,        KC_RPRN,        KC_MINUS,       KC_QUOTE,       KC_TRANSPARENT,
     KC_TRANSPARENT, OSM(MOD_LSFT),  OSM(MOD_LGUI),  OSM(MOD_LALT),  OSM(MOD_LCTL),  KC_TRANSPARENT,                                 KC_DLR,         KC_LBRC,        KC_RBRC,        KC_GRAVE,       KC_SCLN,        KC_TRANSPARENT,
                                                     KC_TRANSPARENT, KC_TRANSPARENT,                                 KC_TRANSPARENT, KC_BSPC
   ),
