@@ -14,7 +14,6 @@ it can't drift from what's actually flashed. Run it after any keymap change:
 Only the layer name map below (LAYER_NAMES) and the keycode label map
 (LABELS) need manual upkeep -- everything else is derived from the source.
 """
-import colorsys
 import json
 import re
 from pathlib import Path
@@ -126,6 +125,12 @@ UNIT = 58
 KEY_SIZE = 50
 LEGEND_LINE_HEIGHT = 20
 LEGEND_PAD = 16
+
+# the diagram is achromatic by design -- it shows "does this key's value
+# differ from layer 0" (bright) vs. "falls through to layer 0" (dim), not
+# the actual firmware RGB (see the fill-selection comment in main() for why).
+DIM_FILL = "#2a2a2a"
+BRIGHT_FILL = "#e8e8e8"
 
 
 def label_for(token):
@@ -245,13 +250,6 @@ def describe_action(token):
     return label_for(token)
 
 
-def hsv_to_hex(h, s, v):
-    if h == 0 and s == 0 and v == 0:
-        return "#1a1a1a"  # unlit key, rendered as dark-but-visible, not pure black
-    r, g, b = colorsys.hsv_to_rgb(h / 255, s / 255, v / 255)
-    return f"#{int(r*255):02x}{int(g*255):02x}{int(b*255):02x}"
-
-
 def luminance(hexcolor):
     r = int(hexcolor[1:3], 16)
     g = int(hexcolor[3:5], 16)
@@ -262,14 +260,10 @@ def luminance(hexcolor):
 def main():
     with open(KEYBOARD_JSON) as f:
         kb = json.load(f)
-    arg_to_matrix = [tuple(e["matrix"]) for e in kb["layouts"]["LAYOUT"]["layout"]]
     coords = [(e["x"], e["y"]) for e in kb["layouts"]["LAYOUT"]["layout"]]
-    matrix_to_led = {tuple(e["matrix"]): i for i, e in enumerate(kb["rgb_matrix"]["layout"])}
-    arg_to_led = [matrix_to_led[m] for m in arg_to_matrix]
 
     text = KEYMAP_C.read_text()
     keymap_layers = parse_layers(text, "keymaps", LAYOUT_MACRO, KEY_COUNT)
-    led_layers = parse_layers(text, "ledmap", LAYOUT_MACRO, KEY_COUNT)
     combos = parse_combos(text)
 
     LAYOUT_DIR.mkdir(exist_ok=True)
@@ -295,7 +289,6 @@ def main():
 
     for layer_idx in sorted(keymap_layers):
         tokens = keymap_layers[layer_idx]
-        colors = led_layers.get(layer_idx)
         legend_combos = combos_shown_by_layer.get(layer_idx, [])
         layer_height = height + (LEGEND_PAD + len(legend_combos) * LEGEND_LINE_HEIGHT if legend_combos else 0)
         svg = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{layer_height}" '
@@ -305,12 +298,6 @@ def main():
             x, y = coords[argpos]
             px = CANVAS_PAD + x * UNIT
             py = CANVAS_PAD + y * UNIT
-            if colors is not None:
-                h, s, v = (int(c) for c in colors[arg_to_led[argpos]].strip("{}").split(","))
-            else:
-                h, s, v = 0, 0, 0
-            fill = hsv_to_hex(h, s, v)
-            text_color = "#000000" if luminance(fill) > 140 else "#e8e8e8"
 
             inherited = False
             display_token = token
@@ -321,8 +308,15 @@ def main():
                 # explicitly redeclared but identical to layer 0 (e.g. Gaming's
                 # Backspace) -- same "unchanged from base" treatment as a real
                 # transparent key, so it doesn't look brighter/more prominent
-                # than genuinely-transparent neighbors for no reason
+                # than genuinely-distinct neighbors for no reason
                 inherited = True
+
+            # diagram fill is purely semantic now (dim = falls through to
+            # base, bright = distinct to this layer) -- it no longer reflects
+            # the actual firmware RGB, which is a per-layer visual pattern
+            # unrelated to any single key's function. See CLAUDE.md.
+            fill = DIM_FILL if inherited else BRIGHT_FILL
+            text_color = "#000000" if luminance(fill) > 140 else "#e8e8e8"
 
             label = label_for(display_token)
             svg.append(

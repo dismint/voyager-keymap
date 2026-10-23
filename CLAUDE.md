@@ -134,6 +134,19 @@ this catches category mistakes that the index math alone can't.
 
 ## Lighting philosophy (per-layer pattern, not per-key function)
 
+**The README diagrams no longer depict this firmware lighting at all.**
+`scripts/render_layouts.py`'s key fill is now purely semantic and
+achromatic: bright (`#e8e8e8`) if a key's value is distinct from layer 0,
+dim (`#2a2a2a`) if it's inherited/transparent — the same `inherited`
+boolean the script already computed for the dimmed-label styling, just
+also driving the background now. It doesn't read `ledmap[]` at all anymore.
+This is intentional: the diagrams answer "what does this key do here,"
+while the physical RGB (below) answers "which layer am I on" — two
+different questions that no longer share one visual language since the
+keycap swap made per-key-legible lighting impossible on two of the four
+rows. Don't try to make the diagram colors match `ledmap[]` again without
+being asked.
+
 **This replaced an older per-key, function-based 4-color palette (white =
 plain key, blue = modifier, green = layer switch, orange = special). If
 you see that scheme referenced anywhere outside git history, it's stale —
