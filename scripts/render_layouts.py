@@ -96,6 +96,7 @@ LABELS = {
     "KC_CAPS": "Caps Lock",
     "QK_BOOT": "Reset",
     "MAGIC": "Magic",
+    "CTL_SFT": "Ctl+Sft",
     "PW_DROP": "PW Drop",
     "RGB_LEDOFF": "RGB Off",
     "RM_VALU": "Bright+",

@@ -20,6 +20,7 @@ enum custom_keycodes {
   RGB_LEDOFF,
   PW_DROP,
   MAGIC,
+  CTL_SFT,
 };
 
 static bool is_alt_tab_active = false;
@@ -66,7 +67,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   [2] = LAYOUT_moonlander(
     KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,                                  KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,  
     ALT_TAB,          LALT(LCTL(KC_SPACE)), PW_DROP,          KC_TRANSPARENT,   TG(5),            KC_PLUS,          KC_TRANSPARENT,                                  KC_TRANSPARENT,   KC_EXLM,          KC_LBRC,          KC_RBRC,          KC_PERC,          KC_BSLS,          KC_TRANSPARENT,  
-    KC_TRANSPARENT,   MO(3),            LGUI(LSFT(KC_S)), KC_LEFT_SHIFT,    MO(5),            KC_EQUAL,         KC_TRANSPARENT,                                  KC_TRANSPARENT,   KC_ASTR,          KC_LPRN,          KC_RPRN,          KC_MINUS,         KC_QUOTE,         KC_TRANSPARENT,  
+    KC_TRANSPARENT,   MO(3),            LGUI(LSFT(KC_S)), KC_LEFT_SHIFT,    MO(5),            KC_EQUAL,         KC_TRANSPARENT,                                  KC_TRANSPARENT,   KC_ASTR,          KC_LPRN,          KC_RPRN,          KC_MINUS,         KC_QUOTE,         CTL_SFT,         
     KC_TRANSPARENT,   OSM(MOD_LSFT),    OSM(MOD_LGUI),    OSM(MOD_LALT),    OSM(MOD_LCTL),    KC_TRANSPARENT,                                  KC_DLR,           KC_LBRC,          KC_RBRC,          KC_GRAVE,         KC_SCLN,          KC_TRANSPARENT,  
     KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,                                  KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,  
     KC_TRANSPARENT,   KC_TRANSPARENT,   KC_TRANSPARENT,                                  KC_TRANSPARENT,   KC_TRANSPARENT,   KC_BSPC
@@ -355,6 +356,19 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     case PW_DROP:
       if (record->event.pressed) {
         SEND_STRING(PW_DROP_STRING);
+      }
+      return false;
+
+    // Symlayer's old col6/row2 slot (previously the inherited apostrophe) --
+    // a plain held Ctrl+Shift modifier, both registered together for as
+    // long as this key is held.
+    case CTL_SFT:
+      if (record->event.pressed) {
+        register_code(KC_LEFT_CTRL);
+        register_code(KC_LEFT_SHIFT);
+      } else {
+        unregister_code(KC_LEFT_CTRL);
+        unregister_code(KC_LEFT_SHIFT);
       }
       return false;
 
