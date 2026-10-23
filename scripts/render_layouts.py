@@ -32,11 +32,11 @@ KEY_COUNT = 52
 # canonical layer names used everywhere (README, images, CLAUDE.md prose).
 LAYER_NAMES = {
     0: "Base",
-    1: "Symlayer",
-    2: "ArrowFN",
-    3: "Gaming",
-    4: "Numpad",
-    5: "Sturdy",
+    1: "Sturdy",
+    2: "Symlayer",
+    3: "ArrowFN",
+    4: "Gaming",
+    5: "Numpad",
 }
 
 # how to render each keycode token. unmapped tokens fall back to a stripped
@@ -114,7 +114,7 @@ COMBO_DISPLAY_LAYER = {
     # combo6 (Z+,) only makes sense once you're already on Sturdy -- that's
     # the physical key pair that turns it back off, since Sturdy's own
     # layout puts "," where "/" sits on every other layer.
-    "combo6": 5,
+    "combo6": 1,
 }
 DEFAULT_COMBO_DISPLAY_LAYER = 0
 

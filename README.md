@@ -24,23 +24,23 @@ QMK keymap for a ZSA Voyager, also ported to a Moonlander. Built and flashed dir
 
 ![Layer 0](layout/layer0.svg)
 
-### Layer 1 — Symlayer
+### Layer 1 — Sturdy
 
 ![Layer 1](layout/layer1.svg)
 
-### Layer 2 — ArrowFN
+### Layer 2 — Symlayer
 
 ![Layer 2](layout/layer2.svg)
 
-### Layer 3 — Gaming
+### Layer 3 — ArrowFN
 
 ![Layer 3](layout/layer3.svg)
 
-### Layer 4 — Numpad
+### Layer 4 — Gaming
 
 ![Layer 4](layout/layer4.svg)
 
-### Layer 5 — Sturdy
+### Layer 5 — Numpad
 
 ![Layer 5](layout/layer5.svg)
 
@@ -51,11 +51,11 @@ QMK keymap for a ZSA Voyager, also ported to a Moonlander. Built and flashed dir
 The top two rows have blacked-out keycaps with no LED shine-through, so only the bottom two rows and the thumb keys light up — 28 keys total. Each layer gets one pastel visual pattern across those 28 keys, not per-key colors, so the layer is identifiable by shape at a glance:
 
 - **Base** — white, dim top row / bright bottom row + thumbs.
+- **Sturdy** — flat pastel purple across both hands, no gradient.
 - **Symlayer** — pastel blue outline: just the outer corners of the top row, the entire bottom row, and both thumbs — a frame around the bottom and edges.
 - **ArrowFN** — pastel green arrow shape: the entire bottom row plus the inner top-row key and both thumbs per hand, angling in toward the center.
 - **Gaming** — pastel rainbow sweep across the left hand only (right hand's on the mouse, stays dark).
 - **Numpad** — flat pastel teal across the entire right hand, left hand dark.
-- **Sturdy** — flat pastel purple across both hands, no gradient.
 
 # Moonlander port
 

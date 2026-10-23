@@ -170,11 +170,11 @@ gradient vs. half-lit), not just hue, so it's still legible by shape alone:
 | Layer | Pattern | Hue |
 |---|---|---|
 | Base (0) | solid both hands, dim row2 / full-bright row3+thumbs (light "pools" toward the thumbs) | white `0,0,255` |
-| Symlayer (1) | **edge outline** — only the outermost row2 key per hand (col1 left / col6 right, the two pinky-edge corners), plus the *entire* row3 both hands, plus all 4 thumbs. Traces a bracket/frame around the bottom and outer edges; row2's middle columns stay dark | pastel blue `170,130,255` |
-| ArrowFN (2) | **arrow shape** — entire row3 both hands (the shaft) + the row2 key nearest the center gap per hand (col6 left / col1 right) + both thumb keys per hand. Forms an arrowhead angling in toward the center on each hand | pastel green `85,130,255` |
-| Gaming (3) | **pastel rainbow**, left hand only — each row2/row3 column pair (6 columns) shares one hue, sweeping red→orange→yellow→green→cyan→blue across the hand; the 2 left thumbs continue the sweep into purple/magenta. Right hand fully dark (it's on the mouse) | rainbow, `S=140,V=255`, hues `0,30,61,91,122,152,183,213` in column order |
-| Numpad (4) | flat solid single color, right hand only (row2+row3+thumbs, no gradient), left hand dark | pastel teal `135,140,255` |
-| Sturdy (5) | flat solid single color, **both hands**, row2+row3+thumbs, no gradient, no asymmetry — the one fully-symmetric flat-solid layer, distinguishing it by shape from Numpad (same "flat" idea, one-handed) and Base (gradient, not flat) | pastel purple `191,130,255` |
+| Sturdy (1) | flat solid single color, **both hands**, row2+row3+thumbs, no gradient, no asymmetry — the one fully-symmetric flat-solid layer, distinguishing it by shape from Numpad (same "flat" idea, one-handed) and Base (gradient, not flat) | pastel purple `191,130,255` |
+| Symlayer (2) | **edge outline** — only the outermost row2 key per hand (col1 left / col6 right, the two pinky-edge corners), plus the *entire* row3 both hands, plus all 4 thumbs. Traces a bracket/frame around the bottom and outer edges; row2's middle columns stay dark | pastel blue `170,130,255` |
+| ArrowFN (3) | **arrow shape** — entire row3 both hands (the shaft) + the row2 key nearest the center gap per hand (col6 left / col1 right) + both thumb keys per hand. Forms an arrowhead angling in toward the center on each hand | pastel green `85,130,255` |
+| Gaming (4) | **pastel rainbow**, left hand only — each row2/row3 column pair (6 columns) shares one hue, sweeping red→orange→yellow→green→cyan→blue across the hand; the 2 left thumbs continue the sweep into purple/magenta. Right hand fully dark (it's on the mouse) | rainbow, `S=140,V=255`, hues `0,30,61,91,122,152,183,213` in column order |
+| Numpad (5) | flat solid single color, right hand only (row2+row3+thumbs, no gradient), left hand dark | pastel teal `135,140,255` |
 
 All non-rainbow layers use one flat hue at `S≈130-140` (true pastel, lower
 than the old 140-210 "soft but still showing some saturation" range) — this
@@ -200,15 +200,15 @@ for writing the resulting colors; see below.
 
 ## Alt-Tab mechanics (there are two independent implementations)
 
-**Symlayer (layer 1)**: the Tab key there is the custom keycode `ALT_TAB`.
+**Symlayer (layer 2)**: the Tab key there is the custom keycode `ALT_TAB`.
 Pressing it registers `KC_LALT` (if not already registered) and taps
-`KC_TAB`; the `case MO(1):` handler in `process_record_user` releases
+`KC_TAB`; the `case MO(2):` handler in `process_record_user` releases
 `KC_LALT` when the layer-hold thumb key is released. This is the "usual
 motion" referenced elsewhere in this doc: hold the thumb, tap Tab, release
 to select — zero delay, because nothing is predicted in advance, only
 decided retroactively on release.
 
-**Gaming (layer 3)**: a different mechanism, `GAME_CTL` (the left-thumb key)
+**Gaming (layer 4)**: a different mechanism, `GAME_CTL` (the left-thumb key)
 + `GAME_TAB` (that layer's Tab slot). `GAME_CTL` is real Ctrl for everything
 by default. The *first* time `GAME_TAB` is pressed while `GAME_CTL` is held,
 it swaps live — unregisters Ctrl, registers `KC_LALT` instead, sets
@@ -238,9 +238,29 @@ one briefly, since removed), watch for two generated-template bugs:
    Prefer plain dedicated keys over tap-dance for anything performance-
    sensitive, though — that's why the Gaming layer moved away from it.
 
-## Sturdy layer (5) and the `magic` key
+## Sturdy layer (1) and the `magic` key
 
-Layer 5 is the [Sturdy](https://oxey.dev/layouts/sturdy/index.html) alpha
+**Why Sturdy is layer 1, numerically below Symlayer/ArrowFN/Gaming/Numpad
+(2/3/4/5) — don't renumber it higher without understanding this first.**
+QMK resolves a transparent key by scanning currently-*active* layers from
+the highest number down to 0, returning the first non-transparent value —
+regardless of *how* each layer became active (toggle vs. momentary-hold).
+Sturdy was originally added as layer 5 (the next free slot) and toggled
+with `TG()`. That broke every other overlay layer: holding Symlayer's key
+while Sturdy was toggled on made both layer 5 and layer 1 active
+simultaneously, and since 5 > 1, Sturdy's own non-transparent letters at
+nearly every position Symlayer also touches completely shadowed Symlayer's
+remaps — Symlayer became almost entirely invisible whenever Sturdy was on.
+The fix was renumbering so Sturdy sits *below* every layer that needs to
+be able to stack on top of it, the same way ArrowFN (nested under
+Symlayer) already had to be numbered higher than Symlayer for that nesting
+to work correctly. Symlayer/ArrowFN/Gaming/Numpad shifted from 1/2/3/4 to
+2/3/4/5 to make room for Sturdy at 1. If a 7th layer is ever added that
+should stack *on top of* Sturdy (the common case — most things should),
+number it ≥2; if it's meant to be another Sturdy-like base-replacement
+layer, it needs this same consideration.
+
+Layer 1 is the [Sturdy](https://oxey.dev/layouts/sturdy/index.html) alpha
 layout (by Oxey, generated via Oxeylyzer) instead of QWERTY, plus a ported
 `magic` key from [Magic Sturdy](https://github.com/Ikcelaks/keyboard_layouts/blob/main/magic_sturdy/magic_sturdy.md)
 (by Ikcelaks). Deliberately **plain Sturdy, not Magic Sturdy's own letter
@@ -255,7 +275,7 @@ where — the whole mechanism is keyed by **keycode identity** (`KC_A`, `KC_B`,
 ...), not by column position, so it's fully portable between the two letter
 layouts.
 
-Everything on layer 5 is transparent (inheriting Base) except:
+Everything on layer 1 is transparent (inheriting Base) except:
 - The 15 real letter positions per hand (row2 + row3, argpos 24-29/36-41
   left, 30-35/42-46 right minus the outer-6th-column punctuation/modifier
   slots) — set to Sturdy's letters. The mapping is literally the Sturdy grid
@@ -295,7 +315,7 @@ Don't try to "fix" this into one symmetric combo; a single keycode pair
 genuinely cannot toggle both ways here since the two layouts don't agree on
 what that second key produces.
 
-## Gaming layer (3) constraints — read before changing anything on it
+## Gaming layer (4) constraints — read before changing anything on it
 
 - **Left-hand only.** The right hand is on the mouse. Never put a gaming-
   layer binding on the right half of the board or the right thumb cluster —

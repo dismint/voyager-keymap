@@ -111,7 +111,7 @@
 <rect x="310" y="281.0" width="50" height="50" rx="8" fill="#e8e8e8" stroke="#444" stroke-width="1"/>
 <text x="335.0" y="310.0" text-anchor="middle" font-size="11" fill="#000000">Ctrl</text>
 <rect x="368" y="295.5" width="50" height="50" rx="8" fill="#e8e8e8" stroke="#444" stroke-width="1"/>
-<text x="393.0" y="324.5" text-anchor="middle" font-size="11" fill="#000000">LR 1</text>
+<text x="393.0" y="324.5" text-anchor="middle" font-size="11" fill="#000000">LR 2</text>
 <rect x="542" y="295.5" width="50" height="50" rx="8" fill="#e8e8e8" stroke="#444" stroke-width="1"/>
 <text x="567.0" y="324.5" text-anchor="middle" font-size="11" fill="#000000">Enter</text>
 <rect x="600" y="281.0" width="50" height="50" rx="8" fill="#e8e8e8" stroke="#444" stroke-width="1"/>
@@ -119,7 +119,7 @@
 <circle cx="25" cy="385.5" r="4" fill="#ff4fd8"/>
 <text x="36" y="389.5" font-size="12" fill="#e8e8e8">D + F → Caps Lock</text>
 <circle cx="25" cy="405.5" r="4" fill="#4fd8ff"/>
-<text x="36" y="409.5" font-size="12" fill="#e8e8e8">D + G → Toggle layer 3 (Gaming)</text>
+<text x="36" y="409.5" font-size="12" fill="#e8e8e8">D + G → Toggle layer 4 (Gaming)</text>
 <circle cx="25" cy="425.5" r="4" fill="#ffd84f"/>
 <text x="36" y="429.5" font-size="12" fill="#e8e8e8">X + C → Hold Alt</text>
 <circle cx="25" cy="445.5" r="4" fill="#9d4fff"/>
@@ -127,5 +127,5 @@
 <circle cx="25" cy="465.5" r="4" fill="#4fff9d"/>
 <text x="36" y="469.5" font-size="12" fill="#e8e8e8">M + , → Hold Meta</text>
 <circle cx="25" cy="485.5" r="4" fill="#ff8a4f"/>
-<text x="36" y="489.5" font-size="12" fill="#e8e8e8">Z + / → Toggle layer 5 (Sturdy)</text>
+<text x="36" y="489.5" font-size="12" fill="#e8e8e8">Z + / → Toggle layer 1 (Sturdy)</text>
 </svg>
