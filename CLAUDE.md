@@ -132,47 +132,57 @@ After writing colors, sanity-check by rendering the layer as a labeled grid
 (key name + color name, laid out like the physical board) before compiling —
 this catches category mistakes that the index math alone can't.
 
-## Lighting philosophy
+## Lighting philosophy (per-layer pattern, not per-key function)
 
-**This is a strict, closed palette — do not reintroduce per-layer unique
-colors or add a new category without being asked.** Only light keys that
-are genuinely remapped/active on that layer; anything transparent/inherited
-(unchanged from layer 0, e.g. WASD on the Gaming layer, or a key that's
-explicitly redeclared but with the exact same value layer 0 already has,
-e.g. Backspace on the Gaming layer) stays fully dark (`{0,0,0}`), even if
-it's functionally important on that layer — **"changed from layer 0" is
-what earns color, not "important."**
+**This replaced an older per-key, function-based 4-color palette (white =
+plain key, blue = modifier, green = layer switch, orange = special). If
+you see that scheme referenced anywhere outside git history, it's stale —
+don't resurrect it without being asked.** The pivot happened because
+Justin physically swapped keycaps so the top two rows (`Esc`-`5`/`6`-`Bksp`
+and `Tab`-`T`/`Y`-`\`, i.e. Voyager argument positions 0-23 on every layer)
+now have **no LED shine-through at all** — those keys are permanently dark
+regardless of what `ledmap[]` says, so lighting them is wasted effort.
+`ledmap[]` sets argpos 0-23 to `{0,0,0}` on every layer, full stop.
 
-| Color | HSV | Category | Used for |
-|---|---|---|---|
-| white (primary) | `0,0,255` | Primary | any plain functional key — letters, numbers, symbols, Enter/Backspace/Space, arrow keys. The default for "just a regular key." |
-| light green (layer) | `85,140,255` | Layer | any layer-switch key, `MO()` or `TG()` alike — color doesn't distinguish hold vs. toggle, the label text does (`LR n` vs `TO n`) |
-| light blue (modifier) | `150,170,255` | Modifier | Ctrl/Alt/Shift/Meta, held or one-shot (`OSM(...)`) alike — all 4 OSM variants share this one color now, not 4 distinct ones |
-| light orange (special) | `28,140,255` | Special | a unique, non-obvious mechanism that doesn't fit the other 3 — omnibar, the Windows+Shift+S screenshot shortcut, `ALT_TAB`, the gaming layer's `GAME_CTL`/`GAME_TAB` pair |
+That leaves only row2 (`Meta/A/S/D/F/G` + `H/J/K/L/;/'`, argpos 24-35),
+row3 (`Shift/Z/X/C/V/B` + `N/M/,/./ //Shift`, argpos 36-47), and the 4
+thumb keys (argpos 48-51) — 28 keys — to do all the lighting work. The
+goal on this reduced canvas isn't "label what each key does" anymore,
+it's **a single at-a-glance visual signature per layer**, distinct enough
+that you can tell which layer is active from the overall shape/color
+without reading anything. Think "gestalt," not "legend." Each layer's
+pattern is intentionally different in *kind* (solid vs. checkered vs.
+gradient vs. half-lit), not just hue, so it's still legible by shape alone:
 
-Two sanctioned exceptions, both requested explicitly — don't extend this
-pattern elsewhere without being asked:
-- **Layer-identity strip**: the `1`-`5` number row is forced to one solid
-  color per layer (overriding whatever category its actual keycode would
-  otherwise earn), so you can tell which layer is active on the physical
-  keyboard at a glance. Base = plain white (`0,0,255`), Symlayer = blue
-  (`170,150,255`), ArrowFN = orange (`28,200,255`), Gaming = red
-  (`0,200,255`), Numpad = teal (`135,210,255`). This is a real firmware
-  lighting feature, not just a diagram artifact — it's set directly in
-  `ledmap[]` for every layer.
-- **ArrowFN's F-keys** are the same blue as the identity strip
-  (`170,150,255`), deliberately distinct from modifier-blue, to set them
-  apart from the white arrow keys on that layer.
+| Layer | Pattern | Hue |
+|---|---|---|
+| Base (0) | solid both hands, dim row2 / full-bright row3+thumbs (light "pools" toward the thumbs) | white `0,0,255` |
+| Symlayer (1) | **edge outline** — only the outermost row2 key per hand (col1 left / col6 right, the two pinky-edge corners), plus the *entire* row3 both hands, plus all 4 thumbs. Traces a bracket/frame around the bottom and outer edges; row2's middle columns stay dark | pastel blue `170,130,255` |
+| ArrowFN (2) | **arrow shape** — entire row3 both hands (the shaft) + the row2 key nearest the center gap per hand (col6 left / col1 right) + both thumb keys per hand. Forms an arrowhead angling in toward the center on each hand | pastel green `85,130,255` |
+| Gaming (3) | **pastel rainbow**, left hand only — each row2/row3 column pair (6 columns) shares one hue, sweeping red→orange→yellow→green→cyan→blue across the hand; the 2 left thumbs continue the sweep into purple/magenta. Right hand fully dark (it's on the mouse) | rainbow, `S=140,V=255`, hues `0,30,61,91,122,152,183,213` in column order |
+| Numpad (4) | flat solid single color, right hand only (row2+row3+thumbs, no gradient), left hand dark | pastel teal `135,140,255` |
 
-All saturations are deliberately kept in the ~140-210 range, not maxed at
-255 — the user explicitly prefers this softer look over harsh fully-
-saturated colors (confirmed preference, not a default).
+All non-rainbow layers use one flat hue at `S≈130-140` (true pastel, lower
+than the old 140-210 "soft but still showing some saturation" range) — this
+was an explicit ask: *"all colors should be tasteful pastel colors."* The
+rainbow on Gaming is the one deliberate exception to "one hue per layer,"
+since multi-hue *is* its pattern.
 
-When a new key needs a color, pick the category by what the key *is*, not
-by what layer it's on: a modifier is always modifier-blue regardless of
-layer, a layer-switch key is always layer-green, and only genuinely unique
-one-off mechanisms get special-orange. Don't invent a new color for "this
-layer's theme" outside the two sanctioned exceptions above.
+**Symlayer/ArrowFN/Gaming/Numpad patterns are keyed to physical column
+position (x-coordinate in `keyboard.json`), not to what keycode happens to
+live there.** "col1" on the left hand and "col6" on the right hand are
+both the outermost/pinky-edge column; "col6" left / "col1" right are both
+the innermost column, nearest the center gap. Thumb keys: argpos 48 (left)
+and 51 (right) are the *outer* thumb (farther from center); argpos 49
+(left) and 50 (right) are the *inner* thumb (nearest center) — confirmed
+via each key's `x` value in `keyboard.json`, not guessed. **When adding or
+changing a keycode on row2/row3/thumbs, don't give it a new color based on
+what it does** — the color at that position is owned by the layer's
+pattern/shape, not the key. If a new layer gets added, design a new
+pattern that's visually distinct in *shape* from all five above (not just
+a new hue in an existing shape) — that's the whole point of this scheme.
+`scripts/arg_to_led.py` / `render_ledmap.py` still work exactly as before
+for writing the resulting colors; see below.
 
 ## Alt-Tab mechanics (there are two independent implementations)
 
@@ -262,13 +272,14 @@ new universally-useful key, prefer setting it on layer 0 and letting it
 flow down over repeating it on every layer.
 
 Lighting does NOT flow through automatically the way keycodes do —
-`ledmap[]` is per-layer and independent. But per the lighting philosophy
-above, don't just mechanically copy a key's base-layer color onto every
-layer that inherits it either: **only light it on a layer if that layer's
-value is actually different from layer 0** (whether via real transparency
-or an explicit-but-identical redeclaration, like Gaming's Backspace). If
-it's the same as the base layer, leave it dark — that sameness is the
-whole signal "nothing changed here."
+`ledmap[]` is per-layer and independent. This mattered a lot under the old
+per-key-function palette (color signaled "this key changed"); under the
+current per-layer-pattern scheme it mostly doesn't apply anymore — each
+layer's row2/row3/thumb colors are dictated by that layer's pattern+hue,
+not by whether the underlying keycode happens to be transparent or
+inherited. Top-row/second-row positions (argpos 0-23) are dark on every
+layer regardless, by the keycap-hardware constraint described above, which
+is a separate reason unrelated to inheritance.
 
 ## Porting to a new board (the Voyager → Moonlander mapping)
 

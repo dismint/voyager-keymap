@@ -44,9 +44,13 @@ QMK keymap for a ZSA Voyager, also ported to a Moonlander. Built and flashed dir
 
 # Lighting
 
-Four colors, used consistently: white for a plain key, light blue for a modifier, light green for a layer switch, light orange for anything one-off (Alt-Tab, the omnibar, the reset button). A key is only colored if it's changed from Base — inherited keys stay dark regardless of how functionally important they are.
+The top two rows have blacked-out keycaps with no LED shine-through, so only the bottom two rows and the thumb keys light up — 28 keys total. Each layer gets one pastel visual pattern across those 28 keys, not per-key colors, so the layer is identifiable by shape at a glance:
 
-Two exceptions: the number row is a layer indicator (one solid color per layer), and ArrowFN's F-keys get their own shade of blue to stand apart from the arrow keys.
+- **Base** — white, dim top row / bright bottom row + thumbs.
+- **Symlayer** — pastel blue outline: just the outer corners of the top row, the entire bottom row, and both thumbs — a frame around the bottom and edges.
+- **ArrowFN** — pastel green arrow shape: the entire bottom row plus the inner top-row key and both thumbs per hand, angling in toward the center.
+- **Gaming** — pastel rainbow sweep across the left hand only (right hand's on the mouse, stays dark).
+- **Numpad** — flat pastel teal across the entire right hand, left hand dark.
 
 # Moonlander port
 
