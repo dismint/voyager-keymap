@@ -45,7 +45,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   [0] = LAYOUT_voyager(
     KC_ESCAPE,      KC_1,           KC_2,           KC_3,           KC_4,           KC_5,                                           KC_6,           KC_7,           KC_8,           KC_9,           KC_0,           KC_BSPC,
     KC_TAB,         KC_Q,           KC_W,           KC_E,           KC_R,           KC_T,                                           KC_Y,           KC_U,           KC_I,           KC_O,           KC_P,           KC_BSLS,
-    KC_LEFT_GUI,    KC_A,           KC_S,           KC_D,           KC_F,           KC_G,                                           KC_H,           KC_J,           KC_K,           KC_L,           KC_SCLN,        KC_QUOTE,
+    KC_LEFT_GUI,    KC_A,           KC_S,           KC_D,           KC_F,           KC_G,                                           KC_H,           KC_J,           KC_K,           KC_L,           KC_SCLN,        CTL_SFT,
     KC_LEFT_SHIFT,  KC_Z,           KC_X,           KC_C,           KC_V,           KC_B,                                           KC_N,           KC_M,           KC_COMMA,       KC_DOT,         KC_SLASH,       KC_RIGHT_SHIFT,
                                                     KC_LEFT_CTRL,   MO(2),                                          KC_ENTER,       KC_SPACE
   ),
@@ -59,7 +59,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   [2] = LAYOUT_voyager(
     KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,                                 KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,
     ALT_TAB,        LALT(LCTL(KC_SPACE)),PW_DROP,        KC_TRANSPARENT, TG(5),          KC_PLUS,                                        KC_EXLM,        KC_LBRC,        KC_RBRC,        KC_PERC,        KC_BSLS,        KC_TRANSPARENT,
-    KC_TRANSPARENT, MO(3),          LGUI(LSFT(KC_S)),KC_LEFT_SHIFT,  MO(5),          KC_EQUAL,                                       KC_ASTR,        KC_LPRN,        KC_RPRN,        KC_MINUS,       KC_QUOTE,       CTL_SFT,
+    KC_TRANSPARENT, MO(3),          LGUI(LSFT(KC_S)),KC_LEFT_SHIFT,  MO(5),          KC_EQUAL,                                       KC_ASTR,        KC_LPRN,        KC_RPRN,        KC_MINUS,       KC_QUOTE,       KC_TRANSPARENT,
     KC_TRANSPARENT, OSM(MOD_LSFT),  OSM(MOD_LGUI),  OSM(MOD_LALT),  OSM(MOD_LCTL),  KC_TRANSPARENT,                                 KC_DLR,         KC_LBRC,        KC_RBRC,        KC_GRAVE,       KC_SCLN,        KC_TRANSPARENT,
                                                     KC_TRANSPARENT, KC_TRANSPARENT,                                 KC_TRANSPARENT, KC_BSPC
   ),
