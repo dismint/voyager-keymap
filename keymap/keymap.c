@@ -57,9 +57,9 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   ),
   [2] = LAYOUT_voyager(
     KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,                                 KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT, KC_TRANSPARENT,
-    ALT_TAB,        LALT(LCTL(KC_SPACE)),PW_DROP,        KC_TRANSPARENT, TG(5),          KC_PLUS,                                        KC_EXLM,        KC_LCBR,        KC_RCBR,        KC_AT,          KC_PERC,        KC_CIRC,
-    KC_TRANSPARENT, MO(3),          LGUI(LSFT(KC_S)),KC_TRANSPARENT, MO(5),          KC_EQUAL,                                       KC_HASH,        KC_LPRN,        KC_RPRN,        KC_MINUS,       KC_UNDS,        KC_ASTR,
-    KC_TRANSPARENT, OSM(MOD_LSFT),  OSM(MOD_LGUI),  OSM(MOD_LALT),  OSM(MOD_LCTL),  KC_TRANSPARENT,                                 KC_DLR,         KC_LBRC,        KC_RBRC,        KC_GRAVE,       KC_TILD,        KC_AMPR,
+    ALT_TAB,        LALT(LCTL(KC_SPACE)),PW_DROP,        KC_TRANSPARENT, TG(5),          KC_PLUS,                                        KC_EXLM,        KC_LBRC,        KC_RBRC,        KC_PERC,        KC_PERC,        KC_TRANSPARENT,
+    KC_TRANSPARENT, MO(3),          LGUI(LSFT(KC_S)),KC_LEFT_SHIFT,  MO(5),          KC_EQUAL,                                       KC_ASTR,        KC_LPRN,        KC_RPRN,        KC_MINUS,       KC_TRANSPARENT, KC_TRANSPARENT,
+    KC_TRANSPARENT, OSM(MOD_LSFT),  OSM(MOD_LGUI),  OSM(MOD_LALT),  OSM(MOD_LCTL),  KC_TRANSPARENT,                                 KC_DLR,         KC_LBRC,        KC_RBRC,        KC_GRAVE,       KC_SCLN,        KC_TRANSPARENT,
                                                     KC_TRANSPARENT, KC_TRANSPARENT,                                 KC_TRANSPARENT, KC_BSPC
   ),
   [3] = LAYOUT_voyager(
@@ -146,8 +146,29 @@ void process_combo_event(uint16_t combo_index, bool pressed) {
 // in this layout otherwise.
 const key_override_t delete_key_override = ko_make_basic(MOD_MASK_SHIFT, KC_BSPC, KC_DEL);
 
+// Symlayer pairs each of these onto one key, real-keyboard style -- tap for
+// the plain symbol, shift+tap for its paired one. None of the base (left)
+// keycodes here are ever produced outside Symlayer, so these are safe to
+// leave globally scoped rather than restricting them to one layer.
+const key_override_t lbrc_lcbr_override = ko_make_basic(MOD_MASK_SHIFT, KC_LBRC, KC_LCBR);
+const key_override_t rbrc_rcbr_override = ko_make_basic(MOD_MASK_SHIFT, KC_RBRC, KC_RCBR);
+const key_override_t perc_at_override = ko_make_basic(MOD_MASK_SHIFT, KC_PERC, KC_AT);
+const key_override_t exlm_circ_override = ko_make_basic(MOD_MASK_SHIFT, KC_EXLM, KC_CIRC);
+const key_override_t astr_hash_override = ko_make_basic(MOD_MASK_SHIFT, KC_ASTR, KC_HASH);
+const key_override_t dlr_ampr_override = ko_make_basic(MOD_MASK_SHIFT, KC_DLR, KC_AMPR);
+const key_override_t grave_tild_override = ko_make_basic(MOD_MASK_SHIFT, KC_GRAVE, KC_TILD);
+const key_override_t minus_unds_override = ko_make_basic(MOD_MASK_SHIFT, KC_MINUS, KC_UNDS);
+
 const key_override_t *key_overrides[] = {
     &delete_key_override,
+    &lbrc_lcbr_override,
+    &rbrc_rcbr_override,
+    &perc_at_override,
+    &exlm_circ_override,
+    &astr_hash_override,
+    &dlr_ampr_override,
+    &grave_tild_override,
+    &minus_unds_override,
 };
 
 
