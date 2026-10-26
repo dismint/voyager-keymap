@@ -102,6 +102,32 @@ inside `nix develop "path:$REPO_DIR" --command ...`. This means:
    re-running the generator — but always regenerate before committing a
    Voyager change, so the committed Moonlander file never goes stale.
 
+## Diagram transparency resolution follows the real nesting chain
+
+A layer reached by holding another layer (e.g. ArrowFN and Numpad, both
+reachable by holding Symlayer's thumb key and *also* holding `LR 3`/`LR 5`)
+has BOTH layers active simultaneously, not just itself and Base. QMK
+resolves a transparent key by scanning every currently-active layer from
+highest number down — so a transparent key on ArrowFN or Numpad can
+resolve to a value from **Symlayer**, not Base, if Symlayer has something
+non-transparent there (it does, at the right-thumb-outer position: an
+explicit `KC_BSPC`). `render_layouts.py` models this via
+`build_parent_layers()`, which derives each layer's real nesting parent
+automatically from `MO(n)` usage in the keymap (whichever layer's keymap
+contains `MO(n)` is layer `n`'s parent; layers never referenced via `MO()`
+— reached only by a standalone `TG()`/combo toggle, e.g. Gaming, Sturdy —
+default to Base, since toggling them never keeps another layer active
+alongside them). `chain_value()` walks that real parent chain instead of
+jumping straight to layer 0.
+
+**Don't revert this to a straight-to-Base fallback** — that was the
+original (wrong) implementation, and it silently showed `Space` for
+ArrowFN's and Numpad's right-thumb-outer key when the real resolved value
+(via the Symlayer-held access path) is `Bksp`. If a new layer is added
+that's nested under something other than Symlayer, no changes are needed
+here — the parent map derives itself from whatever `MO()` call activates
+it, wherever that call lives.
+
 ## The LED-index gotcha (read before touching any color)
 
 `ledmap[][RGB_MATRIX_LED_COUNT][3]` in `keymap.c` is indexed in **LED wiring

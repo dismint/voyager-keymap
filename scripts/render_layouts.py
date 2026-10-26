@@ -265,6 +265,32 @@ def luminance(hexcolor):
     return 0.299 * r + 0.587 * g + 0.114 * b
 
 
+def build_parent_layers(keymap_layers):
+    """Maps each non-zero layer to the layer it's actually nested under --
+    e.g. Numpad -> Symlayer, since Symlayer's own keymap has an MO(5) key
+    (hold Symlayer, then also hold that key to reach Numpad). This is the
+    layer QMK actually falls through to for a transparent key on a layer
+    reached that way, which is NOT always Base -- QMK resolves transparency
+    by scanning every currently-active layer from highest number down, and
+    a nested-hold access path keeps the parent layer active too.
+
+    Derived automatically from MO(n) usage in the keymap (never hand-edit
+    this map): whichever layer's keymap contains MO(n) is n's parent.
+    Layers never referenced via MO() anywhere (reached only by a standalone
+    TG()/combo toggle, e.g. Gaming, Sturdy) default to Base, since there's
+    no nested-hold path for them -- toggling them leaves only Base active
+    alongside them, by definition."""
+    parent_layer = {idx: 0 for idx in keymap_layers if idx != 0}
+    for layer_idx, tokens in keymap_layers.items():
+        for tok in tokens:
+            m = re.match(r"^MO\((\d+)\)$", tok)
+            if m:
+                target = int(m.group(1))
+                if target in parent_layer:
+                    parent_layer[target] = layer_idx
+    return parent_layer
+
+
 def main():
     with open(KEYBOARD_JSON) as f:
         kb = json.load(f)
@@ -273,6 +299,21 @@ def main():
     text = KEYMAP_C.read_text()
     keymap_layers = parse_layers(text, "keymaps", LAYOUT_MACRO, KEY_COUNT)
     combos = parse_combos(text)
+    parent_layer = build_parent_layers(keymap_layers)
+
+    def chain_value(layer_idx, argpos):
+        """the value (layer_idx, argpos) would resolve to if this layer's
+        own entry there were transparent -- walks up the real nesting
+        chain (parent_layer), not straight to Base, recursing through the
+        parent's own transparent entries too. Returns None at the root
+        (layer 0 has no parent to fall back to)."""
+        if layer_idx == 0:
+            return None
+        parent = parent_layer[layer_idx]
+        tok = keymap_layers[parent][argpos]
+        if tok == "KC_TRANSPARENT":
+            return chain_value(parent, argpos)
+        return tok
 
     LAYOUT_DIR.mkdir(exist_ok=True)
     max_x = max(x for x, y in coords) + 1
@@ -309,15 +350,18 @@ def main():
 
             inherited = False
             display_token = token
-            if token == "KC_TRANSPARENT" and layer_idx != 0 and base_tokens is not None:
-                display_token = base_tokens[argpos]
-                inherited = True
-            elif layer_idx != 0 and base_tokens is not None and token == base_tokens[argpos]:
-                # explicitly redeclared but identical to layer 0 (e.g. Gaming's
-                # Backspace) -- same "unchanged from base" treatment as a real
-                # transparent key, so it doesn't look brighter/more prominent
-                # than genuinely-distinct neighbors for no reason
-                inherited = True
+            if layer_idx != 0:
+                parent_value = chain_value(layer_idx, argpos)
+                if token == "KC_TRANSPARENT":
+                    display_token = parent_value
+                    inherited = True
+                elif parent_value is not None and token == parent_value:
+                    # explicitly redeclared but identical to what it would
+                    # inherit anyway (e.g. Gaming's Backspace) -- same
+                    # "unchanged" treatment as a real transparent key, so it
+                    # doesn't look brighter/more prominent than genuinely-
+                    # distinct neighbors for no reason
+                    inherited = True
 
             # diagram fill is purely semantic now (dim = falls through to
             # base, bright = distinct to this layer) -- it no longer reflects
